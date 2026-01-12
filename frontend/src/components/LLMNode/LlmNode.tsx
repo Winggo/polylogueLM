@@ -221,8 +221,8 @@ export default function LLMNode ({
                 >
                     <option value="" disabled>Select a model</option>
                     {models.map((model) => (
-                        <option key={model.value} value={model.value} disabled={model.apiKeyRequired}>
-                            {model.apiKeyRequired ? `${model.label} (Future feature)` : model.label}
+                        <option key={model.value} value={model.value}>
+                            {model.label}
                         </option>
                     ))}
                 </select>
