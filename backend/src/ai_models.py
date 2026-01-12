@@ -7,6 +7,11 @@ from functools import partial
 from src.db.firestore import get_document_by_collection_and_id
 
 
+qwen_7b = ChatTogether(
+    model="Qwen/Qwen2.5-7B-Instruct-Turbo",
+    together_api_key=os.getenv("TOGETHER_API_KEY"),
+    temperature=0.7,
+)
 llama_8b = ChatTogether(
     model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
@@ -113,7 +118,7 @@ def generate_prompt_question(parent_nodes):
     parent_responses = get_parent_responses(parent_nodes=parent_nodes)
     context = "\n\n".join(parent_responses)
 
-    chain = context_prompt_question_template | llama_8b
+    chain = context_prompt_question_template | qwen_7b
     prompt_question = chain.invoke({ "context": context })
     
     return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)
