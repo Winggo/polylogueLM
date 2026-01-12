@@ -1,8 +1,8 @@
-# Polylogue 💬
+# Polylogue
 _discussion or speech involving multiple participants, through multiple forms of communication_
 
-A figma-like canvas editor to visualize and engage in branching conversations across various LLMs.
-Each prompt & completion is represented as a node, and different models can be selected for each node.
+A Figma-like canvas for visualizing and exploring branching LLM conversations.
+Each prompt & completion is represented as a tree node, and different models can be selected for each node.
 
 ![Initial view](assets/preview.png)
 ![Conversation view](assets/conversation-preview.png)

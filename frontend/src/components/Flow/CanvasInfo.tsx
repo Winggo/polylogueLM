@@ -10,7 +10,7 @@ import CopyIcon from "../../icons/CopyIcon"
 
 
 const selector = (s: { transform: [number, number, number] }) => s.transform
-const polylogue = ['P', 'o', 'l', 'y', 'l', 'o', 'g', 'u', 'e', ' ', '💬']
+const polylogue = ['P', 'o', 'l', 'y', 'l', 'o', 'g', 'u', 'e']
 
 type CanvasInfo = {
     canvasId?: string,
@@ -28,7 +28,7 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
     const [copyTooltipTitle, setCopyTooltipTile] = useState("Copy canvas ID")
 
     useEffect(() => {
-        if (curBrand !== 'Polylogue 💬') {
+        if (curBrand !== 'Polylogue') {
             const timer = setTimeout(() => {
                 setCurBrand(curBrand + polylogue[curBrand.length])
             }, 20)

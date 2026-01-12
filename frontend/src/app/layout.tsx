@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: "Polylogue 💬",
+    title: "Polylogue",
     description: "Enable parallel LLM dialogs",
     icons: {
         icon: '/favicon.ico',
