@@ -370,6 +370,11 @@ export default function LLMNode ({
                     {renderOutput()}
                 </div>
             </div>
+            {(promptResponse && 
+                <div className="absolute left-1/2 -translate-x-1/2 mt-[3px] italic text-gray-700 whitespace-nowrap">
+                    To start a branching conversation, click on the ⮕ icon
+                </div>
+            )}
         </div>
     )
 }
