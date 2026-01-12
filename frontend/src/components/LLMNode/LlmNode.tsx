@@ -10,7 +10,7 @@ import {
     useReactFlow,
     type Node,
 } from '@xyflow/react'
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip } from "antd"
 import ReactMarkdown from 'react-markdown'
 
 import LLMNodeCard from "./LLMNodeCard"
@@ -246,22 +246,28 @@ export default function LLMNode ({
                     position={Position.Left}
                     className={`w-4 h-4 mt-[4px] rounded-lg !bg-white border-gray-800 border-2 !cursor-pointer`}
                 />
-                <Handle
-                    id={nodeId}
-                    type="source"
-                    isConnectable={connectableStart}
-                    isConnectableEnd={false}
-                    position={Position.Right}
-                    className={`w-12 h-12 mt-[4px] rounded-lg !bg-transparent border-gray-800 !cursor-pointer`}
-                    onClick={() => {
-                        // Deselect current node after creating new one
-                        setTimeout(() => {
-                            setNode(nodeId, {}, false)
-                        }, 0)
-                    }}
-                >
-                    {connectableStart && <RightArrowCircle />}
-                </Handle>
+                <Tooltip
+                            title={<span className="text-sm">Click to start a branching conversation</span>}
+                            placement="top"
+                            mouseLeaveDelay={0}
+                        >
+                    <Handle
+                        id={nodeId}
+                        type="source"
+                        isConnectable={connectableStart}
+                        isConnectableEnd={false}
+                        position={Position.Right}
+                        className={`w-12 h-12 mt-[4px] rounded-lg !bg-transparent border-gray-800 !cursor-pointer`}
+                        onClick={() => {
+                            // Deselect current node after creating new one
+                            setTimeout(() => {
+                                setNode(nodeId, {}, false)
+                            }, 0)
+                        }}
+                    >
+                        {connectableStart && <RightArrowCircle />}
+                    </Handle>
+                </Tooltip>
             </>
         )
     }
