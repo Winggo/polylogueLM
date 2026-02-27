@@ -74,7 +74,7 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
                     mouseLeaveDelay={0}
                 >
                     <Button
-                        className="!pl-[20px] !pr-[20px] !pt-[20px] !pb-[20px] !shadow-xl dark:!bg-[#0a0a0a] dark:!border-[#2a2a2a]"
+                        className="!pl-[20px] !pr-[20px] !pt-[20px] !pb-[20px] !shadow-xl dark:!bg-[#1f1f1f] dark:!border-[#2a2a2a]"
                         loading={savingCanvas}
                         onClick={() => handleSaveCanvas({ curCanvasTitle })}
                     >
