@@ -28,8 +28,6 @@ import CanvasInfo from "./CanvasInfo"
 import {
     llmNodeSize,
     llmNewNodeDeltaX,
-    edgeStrokeColor,
-    edgeStyles,
     backendServerURL,
 } from "../../utils/constants"
 
@@ -103,7 +101,7 @@ function createEdge(sourceId: string, targetId: string) {
             type: MarkerType.ArrowClosed,
             width: 20,
             height: 20,
-            color: edgeStrokeColor,
+            color: 'currentColor',
         },
     }
 }
@@ -457,8 +455,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     panOnScroll
                     panOnScrollMode={PanOnScrollMode.Free}
                     nodeTypes={nodeTypes}
-                    defaultEdgeOptions={{ style: edgeStyles}}
-                    connectionLineStyle={edgeStyles}
+                    defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20, color: 'currentColor' } }}
                     colorMode={theme}
                     defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
                 >

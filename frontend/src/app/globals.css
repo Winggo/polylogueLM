@@ -25,12 +25,16 @@ body {
 }
 
 /* @xyflow/react */
-.react-flow__edge {
-    stroke-width: 4px;
-    stroke: #000;
+.react-flow__edge-path,
+.react-flow__connection-path {
+    stroke-width: 2px;
+    stroke: #1F2937;
+    color: #1F2937;
 }
-.dark .react-flow__edge {
-    stroke: #a3a3a3;
+.dark .react-flow__edge-path,
+.dark .react-flow__connection-path {
+    stroke: #D1D5DB;
+    color: #D1D5DB;
 }
 
 .react-flow__node-llmText {
