@@ -305,7 +305,7 @@ export default function LLMNode ({
                         resize-none
                         bg-transparent
                         dark:text-gray-100
-                        dark:placeholder-gray-500
+                        dark:placeholder-gray-400
                     `}
                     rows={1}
                     onInput={(e) => {
