@@ -1,8 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
     --background: #ffffff;
     --foreground: #171717;
+}
+
+.dark {
+    --background: #121212;
+    --foreground: #e5e5e5;
 }
 
 @theme inline {
@@ -23,6 +29,9 @@ body {
     stroke-width: 4px;
     stroke: #000;
 }
+.dark .react-flow__edge {
+    stroke: #a3a3a3;
+}
 
 .react-flow__node-llmText {
     border-radius: 30px;
@@ -31,10 +40,16 @@ body {
 .react-flow__controls {
     background-color: white;
 }
+.dark .react-flow__controls {
+    background-color: #1f1f1f;
+}
 
 .react-flow__controls-button {
     color: black;
     cursor: pointer;
+}
+.dark .react-flow__controls-button {
+    color: #e5e5e5;
 }
 
 .react-flow__attribution {
@@ -48,10 +63,19 @@ body {
         border-color: black !important;
     }
 }
+.dark .ant-btn-default {
+    &:hover {
+        color: #e5e5e5 !important;
+        border-color: #e5e5e5 !important;
+    }
+}
 
 .ant-btn-loading-icon {
     color: black !important;
     margin-bottom: 5px;
+}
+.dark .ant-btn-loading-icon {
+    color: #e5e5e5 !important;
 }
 
 .ant-spin-fullscreen {
@@ -59,6 +83,9 @@ body {
 }
 .ant-spin-dot-item {
     color: black;
+}
+.dark .ant-spin-dot-item {
+    color: #e5e5e5;
 }
 
 .ant-input-affix-wrapper-focused {
@@ -89,4 +116,7 @@ body {
 }
 .canvas-title-input:focus {
     border-bottom: 1px solid black;
+}
+.dark .canvas-title-input:focus {
+    border-bottom: 1px solid #e5e5e5;
 }

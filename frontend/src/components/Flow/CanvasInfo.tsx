@@ -6,10 +6,10 @@ import { Button, Tooltip, Input, Popconfirm } from "antd"
 import { WarningOutlined } from "@ant-design/icons"
 import '@ant-design/v5-patch-for-react-19'
 
+import { useTheme } from "../../context/ThemeContext"
 import CopyIcon from "../../icons/CopyIcon"
 
 
-const selector = (s: { transform: [number, number, number] }) => s.transform
 const polylogue = ['P', 'o', 'l', 'y', 'l', 'o', 'g', 'u', 'e']
 
 type CanvasInfo = {
@@ -21,10 +21,10 @@ type CanvasInfo = {
 
 export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, savingCanvas }: CanvasInfo) { 
     const router = useRouter()
+    const { theme, toggleTheme } = useTheme()
     const isMobile = useMediaQuery({ maxWidth: 768 })
-    const [x, y, zoom] = useStore(selector)
     const [curBrand, setCurBrand] = useState("")
-    const [curCanvasTitle, setCurCanvasTitle] = useState("[Your Canvas]")
+    const [curCanvasTitle, setCurCanvasTitle] = useState("[Welcome to Polylogue]")
     const [copyTooltipTitle, setCopyTooltipTile] = useState("Copy canvas ID")
 
     useEffect(() => {
@@ -43,35 +43,6 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
             setCurCanvasTitle(canvasTitle)
         }
     }, [canvasTitle])
-
-    const renderTopLeftPanel = () => {
-        return (
-            <Panel position="top-left" className="!z-5 text-black">
-                <Popconfirm
-                    title="Go to new canvas page"
-                    description="Save your canvas before leaving!"
-                    onConfirm={() => router.push("/canvas")}
-                    onCancel={() => {}}
-                    okText="Yes"
-                    okType="default"
-                    okButtonProps={{
-                        style: {
-                            border: '2px solid gray',
-                            boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.1)',
-                            fontFamily: 'Barlow',
-                            fontWeight: 500,
-                        }
-                    }}
-                    cancelText="No"
-                    icon={<WarningOutlined style={{ color: "red" }} />}
-                >
-                    <p className="text-2xl font-bold cursor-pointer">
-                        {curBrand}
-                    </p>
-                </Popconfirm>
-            </Panel>
-        )
-    }
 
     const renderTopCenterPanel = () => {
         if (isMobile) return
@@ -92,7 +63,7 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
     const renderTopRightPanel = () => {
         if (!canvasId) return
         return (
-            <><Panel position="top-right" className="text-black text-right">
+            <><Panel position="top-right" className="text-black dark:text-gray-100 text-right">
                 <Tooltip
                     title={<div>
                         <b>Save & copy link</b>
@@ -103,7 +74,7 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
                     mouseLeaveDelay={0}
                 >
                     <Button
-                        className="!pl-[20px] !pr-[20px] !pt-[20px] !pb-[20px] !shadow-xl"
+                        className="!pl-[20px] !pr-[20px] !pt-[20px] !pb-[20px] !shadow-xl dark:!bg-[#0a0a0a] dark:!border-[#2a2a2a]"
                         loading={savingCanvas}
                         onClick={() => handleSaveCanvas({ curCanvasTitle })}
                     >
@@ -135,51 +106,53 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
                             <CopyIcon />
                         </ControlButton>
                     </Tooltip>
+                    <Tooltip
+                        title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+                        placement="left"
+                        mouseLeaveDelay={0}
+                    >
+                        <ControlButton onClick={toggleTheme}>
+                            {theme === 'light' ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                                </svg>
+                            ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="5" />
+                                    <line x1="12" y1="1" x2="12" y2="3" />
+                                    <line x1="12" y1="21" x2="12" y2="23" />
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                                    <line x1="1" y1="12" x2="3" y2="12" />
+                                    <line x1="21" y1="12" x2="23" y2="12" />
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                                </svg>
+                            )}
+                        </ControlButton>
+                    </Tooltip>
             </Controls></>
-        )
-    }
-
-    const renderBottomLeftPanel = () => {
-        return (
-            <Panel position="bottom-left" className="!z-3 text-black text-left text-md font">
-                x: {(-x).toFixed(2)}
-                <br />
-                y: {y.toFixed(2)}
-                <br />
-                zoom: {zoom.toFixed(2)}
-            </Panel>
         )
     }
 
     const renderBottomCenterPanel = () => {
         if (isMobile) return
         return (
-            <Panel position="bottom-center" className="!z-3 text-black text-center !ml-0">
+            <Panel position="bottom-center" className="!z-3 text-black dark:text-gray-100 text-center !ml-0 text-sm">
                 Drag to move across canvas
                 <br />
                 Scroll or pinch to zoom in & out
                 <br />
-                ⌘+&apos; to create new node -- ⌘+\ to view all
-            </Panel>
-        )
-    }
-
-    const renderBottomRightPanel = () => {
-        return (
-            <Panel position="bottom-right" className="!z-3 text-black text-sm">
-                © {new Date().getFullYear()} Winggo Tse
+                Double click to create new node
             </Panel>
         )
     }
 
     return (
         <>
-            {renderTopLeftPanel()}
             {renderTopCenterPanel()}
             {renderTopRightPanel()}
-            {renderBottomLeftPanel()}
             {renderBottomCenterPanel()}
-            {renderBottomRightPanel()}
         </>
     )
 }

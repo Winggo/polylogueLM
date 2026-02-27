@@ -209,14 +209,14 @@ export default function LLMNode ({
     const renderModelDropdown = () => {
         if (!selected && !isHovered) return
         return (
-            <NodeToolbar isVisible className="top-[-16px] bg-gray-800 p-1 pr-1.5 rounded-[16px]">
+            <NodeToolbar isVisible className="top-[-16px] bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-700 p-1 pr-1.5 rounded-[16px]">
                 <select
                     value={model}
                     onChange={handleModelChange}
                     className={`
-                        bg-gray-800
+                        bg-white dark:bg-neutral-950
                         border-none
-                        text-white
+                        text-black dark:text-gray-100
                         py-1
                         px-3
                         rounded-md
@@ -244,7 +244,7 @@ export default function LLMNode ({
                     isConnectable
                     isConnectableStart={false}
                     position={Position.Left}
-                    className={`w-4 h-4 mt-[4px] rounded-lg !bg-white border-gray-800 border-2 !cursor-pointer`}
+                    className={`w-4 h-4 mt-[4px] rounded-lg !bg-white dark:!bg-neutral-950 border-gray-800 dark:border-gray-400 border-2 !cursor-pointer`}
                 />
                 <Tooltip
                             title={<span className="text-sm">Click to start a branching conversation</span>}
@@ -257,7 +257,7 @@ export default function LLMNode ({
                         isConnectable={connectableStart}
                         isConnectableEnd={false}
                         position={Position.Right}
-                        className={`w-12 h-12 mt-[4px] rounded-lg !bg-transparent border-gray-800 !cursor-pointer`}
+                        className={`w-12 h-12 mt-[4px] rounded-lg !bg-transparent border-gray-800 dark:border-gray-400 !cursor-pointer`}
                         onClick={() => {
                             // Deselect current node after creating new one
                             setTimeout(() => {
@@ -275,7 +275,7 @@ export default function LLMNode ({
     const renderHeaders = () => (
         <>
             <DottedSquare />
-            <div className="absolute top-[-26px] right-[30px] w-[300px] h-[20px] text-black pointer-events-none text-right">
+            <div className="absolute top-[-26px] right-[30px] w-[300px] h-[20px] text-black dark:text-gray-100 pointer-events-none text-right">
                 {modelMapping[model]}
             </div>
         </>
@@ -307,6 +307,9 @@ export default function LLMNode ({
                         flex-grow
                         focus:outline-none
                         resize-none
+                        bg-transparent
+                        dark:text-gray-100
+                        dark:placeholder-gray-500
                     `}
                     rows={1}
                     onInput={(e) => {
@@ -320,7 +323,7 @@ export default function LLMNode ({
                     <div className="h-[32px] w-[32px]"></div>
                 }
             </div>
-            <div className={`border-t border-gray-300 mt-1 mb-1 group-focus-within:border-gray-800`}></div>
+            <div className={`border-t border-gray-300 dark:border-gray-600 mt-1 mb-1 group-focus-within:border-gray-800 dark:group-focus-within:border-gray-400`}></div>
         </>
     )
 
@@ -350,14 +353,14 @@ export default function LLMNode ({
             <div className={`
                 w-[650px]
                 h-[700px]
-                bg-white
-                text-black
-                border-gray-800
+                bg-white dark:bg-neutral-950
+                text-black dark:text-gray-100
+                border border-gray-800 dark:border-neutral-700
                 rounded-[30px]
                 shadow-xl
-                ${isHovered && !selected && "outline-[2px] outline-orange-500"}
-                ${selected && "outline-[2px] shadow-2xl"}
-                group-focus-within:outline-[2px] shadow-2xl
+                ${isHovered && !selected && "outline-[1px] outline-orange-500"}
+                ${selected && "outline-[1px] shadow-2xl"}
+                group-focus-within:outline-[1px] shadow-2xl
                 flex
                 p-3
                 flex-col
@@ -371,7 +374,7 @@ export default function LLMNode ({
                 </div>
             </div>
             {(promptResponse && 
-                <div className="absolute left-1/2 -translate-x-1/2 mt-[3px] italic text-gray-700 whitespace-nowrap">
+                <div className="absolute left-1/2 -translate-x-1/2 mt-[3px] italic text-gray-700 dark:text-gray-400 whitespace-nowrap">
                     To start a branching conversation, click on the ⮕ icon
                 </div>
             )}

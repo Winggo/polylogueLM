@@ -10,6 +10,7 @@ import {
     useNodesState,
     useReactFlow,
     MarkerType,
+    PanOnScrollMode,
     type Connection,
     type Node,
     type Edge,
@@ -21,6 +22,7 @@ import { useMediaQuery } from "react-responsive"
 import { Modal, Input, Tooltip, message } from "antd"
 import { CopyFilled } from "@ant-design/icons"
 
+import { useTheme } from "../../context/ThemeContext"
 import LLMNode from "../LLMNode/LlmNode"
 import CanvasInfo from "./CanvasInfo"
 import {
@@ -109,6 +111,7 @@ function createEdge(sourceId: string, targetId: string) {
 
 export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }: FlowProps) {
     const pathname = usePathname()
+    const { theme } = useTheme()
     const reactFlowInstance = useReactFlow()
     const reactFlowWrapper = useRef<HTMLDivElement | null>(null)
     const isMobile = useMediaQuery({ maxWidth: 768 })
@@ -318,6 +321,21 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
         [setNodes, setEdges, canvasId]
     )
 
+    const handlePaneDoubleClick = useCallback((event: React.MouseEvent) => {
+        if (event.detail !== 2) return
+        const nodePosition = reactFlowInstance.screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
+        })
+        const newNode = createNewLlmTextNode({
+            position: nodePosition,
+            data: { setNode, createNextNode, canvasId },
+            origin: [0, 0],
+        })
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat({ ...newNode, selected: true }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reactFlowInstance, setNode, createNextNode, canvasId, setNodes])
+
     const onConnect = useCallback(
         (connection: Connection) => setEdges(
             (eds) => {
@@ -423,10 +441,12 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
 
     return (
         <Fade delay={0} duration={1000} cascade damping={0.5} triggerOnce>
-            <div className="h-screen w-screen bg-gray-200" ref={reactFlowWrapper}>
+            <div className="h-screen w-screen bg-gray-200 dark:bg-neutral-800" ref={reactFlowWrapper}>
                 {contextHolder}
                 <ReactFlow
                     onInit={() => setFlowRendered(true)}
+                    onPaneClick={handlePaneDoubleClick}
+                    zoomOnDoubleClick={false}
                     nodes={nodes}
                     edges={edges}
                     onNodesChange={onNodesChange}
@@ -434,10 +454,12 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onConnect={onConnect}
                     onConnectEnd={onConnectEnd}
                     preventScrolling={false}
+                    panOnScroll
+                    panOnScrollMode={PanOnScrollMode.Free}
                     nodeTypes={nodeTypes}
                     defaultEdgeOptions={{ style: edgeStyles}}
                     connectionLineStyle={edgeStyles}
-                    colorMode="light"
+                    colorMode={theme}
                     defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
                 >
                     <Background gap={25} />

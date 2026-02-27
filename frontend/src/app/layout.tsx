@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 import '@xyflow/react/dist/base.css'
 import "./globals.css"
+import { ThemeProvider } from "../context/ThemeContext"
+import AntdThemeProvider from "./AntdThemeProvider"
 
 
 const geistSans = Geist({
@@ -29,16 +31,20 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <head>
                 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
             </head>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                <AntdRegistry>
-                    {children}
-                </AntdRegistry>
+                <ThemeProvider>
+                    <AntdRegistry>
+                        <AntdThemeProvider>
+                            {children}
+                        </AntdThemeProvider>
+                    </AntdRegistry>
+                </ThemeProvider>
             </body>
         </html>
     )
