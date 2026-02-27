@@ -1,50 +1,39 @@
 import json
 import os
 from langchain_together import ChatTogether
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
 from langchain.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda
 from functools import partial
 from src.db.firestore import get_document_by_collection_and_id
 
 
-qwen_2_5_7b_together_model = ChatTogether(
+qwen_7b = ChatTogether(
     model="Qwen/Qwen2.5-7B-Instruct-Turbo",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
 )
-mixtral_8x7b_together_model = ChatTogether(
+llama_8b = ChatTogether(
+    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    together_api_key=os.getenv("TOGETHER_API_KEY"),
+    temperature=0.7,
+)
+mixtral_56b = ChatTogether(
     model="mistralai/Mixtral-8x7B-Instruct-v0.1",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
 )
-llama_3_3_70b_together_model = ChatTogether(
-    model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+openai_120b = ChatTogether(
+    model="openai/gpt-oss-120b",
     together_api_key=os.getenv("TOGETHER_API_KEY")
 )
-if os.getenv("OPENAI_API_KEY"):
-    gpt_4o_model = ChatOpenAI(
-        model="gpt-4o",
-        api_key=os.getenv("OPENAI_API_KEY"),
-    )
-if os.getenv("ANTHROPIC_API_KEY"):
-    claude_sonnet_model = ChatAnthropic(
-        model="claude-3-5-sonnet-20240620",
-        api_key=os.getenv("ANTHROPIC_API_KEY"),
-    )
 
 
 def get_model(model_name):
-    if model_name == "qwen-2.5-7b":
-        llm = qwen_2_5_7b_together_model
-    elif model_name == "mixtral-8x7b":
-        llm = mixtral_8x7b_together_model
-    elif model_name == "llama-3.3-70b":
-        llm = llama_3_3_70b_together_model
-    elif model_name == "gpt-4o":
-        llm = gpt_4o_model
-    elif model_name == "claude-sonnet":
-        llm = claude_sonnet_model
+    if model_name == "llama_8b":
+        llm = llama_8b
+    elif model_name == "mixtral_56b":
+        llm = mixtral_56b
+    elif model_name == "openai_120b":
+        llm = openai_120b
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
     
@@ -129,7 +118,7 @@ def generate_prompt_question(parent_nodes):
     parent_responses = get_parent_responses(parent_nodes=parent_nodes)
     context = "\n\n".join(parent_responses)
 
-    chain = context_prompt_question_template | qwen_2_5_7b_together_model
+    chain = context_prompt_question_template | qwen_7b
     prompt_question = chain.invoke({ "context": context })
     
     return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)

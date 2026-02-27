@@ -34,5 +34,6 @@ Deploy backend first.
 Deploy frontend second.
 1. Configure `frontend/app.yaml` and add any required env variables. Reference `frontend/app.example.yaml`.
 2. Run `NEXT_PUBLIC_BACKEND_ROOT_URL=<APP_ENGINE_BACKEND_URL> yarn build`.
+    - ex: `NEXT_PUBLIC_BACKEND_ROOT_URL=https://backend-dot-polylogue-123456.ew.r.appspot.com yarn build`
 3. Run `gcloud app deploy` in `frontend/`.
     - Run `gcloud app logs tail -s frontend` to debug issues.

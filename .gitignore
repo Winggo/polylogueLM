@@ -51,3 +51,4 @@ frontend/build/
 # GCP
 backend/app.yaml
 frontend/app.yaml
+*creds.json

@@ -16,7 +16,7 @@
     "@xyflow/react": "^12.5.1",
     "antd": "^5.24.6",
     "nanoid": "^5.1.5",
-    "next": "15.2.4",
+    "next": "^16.1.1",
     "react": "^19.0.0",
     "react-awesome-reveal": "^4.3.1",
     "react-dom": "^19.0.0",
@@ -32,7 +32,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.2.4",
+    "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
