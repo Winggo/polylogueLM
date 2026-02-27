@@ -162,7 +162,10 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     canvasId,
                 }
             })))
-            setEdges((eds) => eds.concat(edgesForExistingNodes))
+            setEdges((eds) => {
+                const existingIds = new Set(eds.map(e => e.id))
+                return eds.concat(edgesForExistingNodes.filter(e => !existingIds.has(e.id)))
+            })
             reactFlowInstance.fitView({ minZoom: 0.5, maxZoom: 0.9 })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

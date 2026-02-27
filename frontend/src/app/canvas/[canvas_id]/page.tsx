@@ -28,24 +28,26 @@ export default function Index() {
         router.push(`/canvas?error=canvas-not-found-${canvas_id}`)
     }
 
-    const fetchCanvas = async () => {
-        try {
-            const response = await fetch(`${backendServerURL}/ds/v1/canvases/${canvas_id}`)
-            if (response.status !== 200) {
-                redirectToNewCanvasPage()
-            }
-
-            const canvas = await response.json()
-            setCanvas(canvas["document"])
-        } catch {
-            redirectToNewCanvasPage()
-        }
-    }
-
     useEffect(() => {
+        const controller = new AbortController()
+
+        const fetchCanvas = async () => {
+            try {
+                const response = await fetch(`${backendServerURL}/ds/v1/canvases/${canvas_id}`, { signal: controller.signal })
+                if (response.status !== 200) {
+                    redirectToNewCanvasPage()
+                }
+                const canvas = await response.json()
+                setCanvas(canvas["document"])
+            } catch (e) {
+                if ((e as Error).name !== 'AbortError') redirectToNewCanvasPage()
+            }
+        }
+
         fetchCanvas()
+        return () => controller.abort()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canvas_id, router])
+    }, [canvas_id])
 
     return (
         <ReactFlowProvider>
