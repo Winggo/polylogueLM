@@ -441,7 +441,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
     }
 
     return (
-        <Fade delay={0} duration={1000} cascade damping={0.5} triggerOnce>
+        <Fade delay={0} duration={2000} cascade damping={0.5} triggerOnce>
             <div className="h-screen w-screen bg-gray-200 dark:bg-neutral-800" ref={reactFlowWrapper}>
                 {contextHolder}
                 <ReactFlow
