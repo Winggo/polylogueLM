@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useRef, useEffect, useState } from 'react'
+import React, { useCallback, useRef, useEffect, useState, useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 import {
     ReactFlow,
@@ -25,6 +25,7 @@ import { CopyFilled } from "@ant-design/icons"
 import { useTheme } from "../../context/ThemeContext"
 import LLMNode from "../LLMNode/LlmNode"
 import CanvasInfo from "./CanvasInfo"
+import AnimatedConnectionLine from "./AnimatedConnectionLine"
 import {
     llmNodeSize,
     llmNewNodeDeltaX,
@@ -35,6 +36,7 @@ import {
 const nodeTypes = {
     llmText: LLMNode,
 }
+
 
 type createNewLlmTextNodeParams = {
     position: { x: number, y: number },
@@ -121,6 +123,13 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
     const [copyTooltipText, setCopyTooltipText] = useState("Copy Link")
     const [nodes, setNodes, onNodesChange] = useNodesState<ExtendedNode>([])
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+
+    const animatedEdges = useMemo(() => {
+        const emptyNodeIds = new Set(
+            nodes.filter(n => !n.data.prompt_response).map(n => n.id)
+        )
+        return edges.map(e => ({ ...e, animated: emptyNodeIds.has(e.target) }))
+    }, [edges, nodes])
 
     const setNode = useCallback((nodeId: string, newData: ExtendedNodeData | object, selected: boolean) => {
         setNodes((nds) =>
@@ -449,7 +458,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onPaneClick={handlePaneDoubleClick}
                     zoomOnDoubleClick={false}
                     nodes={nodes}
-                    edges={edges}
+                    edges={animatedEdges}
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
@@ -458,6 +467,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     panOnScroll
                     panOnScrollMode={PanOnScrollMode.Free}
                     nodeTypes={nodeTypes}
+                    connectionLineComponent={AnimatedConnectionLine}
                     defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20, color: 'currentColor' } }}
                     colorMode={theme}
                     defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
