@@ -15,7 +15,7 @@ export default function AnimatedConnectionLine({
             <path
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 className="react-flow__connection-path"
                 d={edgePath}
             />
