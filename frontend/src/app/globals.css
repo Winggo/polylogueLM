@@ -37,6 +37,24 @@ body {
     color: #D1D5DB;
 }
 
+/* Pulse animation for edges that are not connected or connected to empty node */
+.react-flow__edge.animated .react-flow__edge-path,
+.react-flow__connection-path {
+    animation: pulse 2s infinite;
+}
+.react-flow__edge.animated path {
+    stroke-dasharray: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
 .react-flow__node-llmText {
     border-radius: 30px;
 }
