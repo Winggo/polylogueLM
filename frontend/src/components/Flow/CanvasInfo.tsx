@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
-import { Controls, ControlButton, Panel, useStore } from "@xyflow/react"
+import { Controls, ControlButton, Panel } from "@xyflow/react"
 import { useMediaQuery } from "react-responsive"
-import { Button, Tooltip, Input, Popconfirm } from "antd"
-import { WarningOutlined } from "@ant-design/icons"
+import { Button, Tooltip, Input } from "antd"
 import '@ant-design/v5-patch-for-react-19'
 
 import { useTheme } from "../../context/ThemeContext"
 import CopyIcon from "../../icons/CopyIcon"
 
-
-const polylogue = ['P', 'o', 'l', 'y', 'l', 'o', 'g', 'u', 'e']
 
 type CanvasInfo = {
     canvasId?: string,
@@ -20,23 +16,10 @@ type CanvasInfo = {
 }
 
 export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, savingCanvas }: CanvasInfo) { 
-    const router = useRouter()
     const { theme, toggleTheme } = useTheme()
     const isMobile = useMediaQuery({ maxWidth: 768 })
-    const [curBrand, setCurBrand] = useState("")
     const [curCanvasTitle, setCurCanvasTitle] = useState("[Welcome to Polylogue]")
     const [copyTooltipTitle, setCopyTooltipTile] = useState("Copy canvas ID")
-
-    useEffect(() => {
-        if (curBrand !== 'Polylogue') {
-            const timer = setTimeout(() => {
-                setCurBrand(curBrand + polylogue[curBrand.length])
-            }, 20)
-            return () => {
-                clearTimeout(timer)
-            }
-        }
-    }, [curBrand])
 
     useEffect(() => {
         if (canvasTitle) {
