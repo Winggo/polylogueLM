@@ -13,12 +13,13 @@ type CanvasInfo = {
     canvasTitle?: string,
     handleSaveCanvas: ({ curCanvasTitle }: { curCanvasTitle: string }) => void,
     savingCanvas: boolean,
+    newCanvas?: boolean,
 }
 
-export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, savingCanvas }: CanvasInfo) { 
+export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, savingCanvas, newCanvas }: CanvasInfo) { 
     const { theme, toggleTheme } = useTheme()
     const isMobile = useMediaQuery({ maxWidth: 768 })
-    const [curCanvasTitle, setCurCanvasTitle] = useState("[Welcome to Polylogue]")
+    const [curCanvasTitle, setCurCanvasTitle] = useState(newCanvas ? "[Welcome to Polylogue]" : "")
     const [copyTooltipTitle, setCopyTooltipTile] = useState("Copy canvas ID")
 
     useEffect(() => {

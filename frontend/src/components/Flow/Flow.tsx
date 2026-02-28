@@ -479,6 +479,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                             canvasTitle={canvasTitle}
                             handleSaveCanvas={handleSaveCanvas}
                             savingCanvas={savingCanvas}
+                            newCanvas={newCanvas}
                         />
                     )}
                 </ReactFlow>
