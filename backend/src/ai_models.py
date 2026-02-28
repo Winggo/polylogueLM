@@ -44,7 +44,7 @@ context_prompt_question_template = PromptTemplate(
     input_variables=["context"],
     template="""Given the following context, generate an interesting follow up question intended to induce curisoity.
 If no context is provided, generate a question users will be curious to know the answer to.
-Always end with a question mark. DO NOT surround the question in quotes.
+Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
 *IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*.
 *Context:*
 {context}"""
