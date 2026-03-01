@@ -52,3 +52,6 @@ frontend/build/
 backend/app.yaml
 frontend/app.yaml
 *creds.json
+
+# agents
+agents/
