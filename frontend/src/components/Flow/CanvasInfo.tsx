@@ -123,11 +123,11 @@ export default function CanvasInfo({ canvasId, canvasTitle, handleSaveCanvas, sa
         if (isMobile) return
         return (
             <Panel position="bottom-center" className="!z-3 text-black dark:text-gray-100 text-center !ml-0 text-sm">
-                Drag to move across canvas
-                <br />
                 Scroll or pinch to zoom in & out
                 <br />
-                Double click to create new node
+                Double click on canvas to create new nodes
+                <br />
+                Drag and drop images to add them to the canvas
             </Panel>
         )
     }
