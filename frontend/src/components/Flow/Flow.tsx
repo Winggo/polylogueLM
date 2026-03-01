@@ -367,7 +367,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
         event.preventDefault()
         const files = Array.from(event.dataTransfer.files)
         const imageFile = files.find(f =>
-            f.type === 'image/png' || f.type === 'image/jpeg' || f.type === 'image/heic'
+            f.type === 'image/png' || f.type === 'image/jpeg'
         )
         if (!imageFile) return
 
