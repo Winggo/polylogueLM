@@ -32,16 +32,16 @@ type LLMNodeProps = {
     positionAbsoluteY: number
 }
 
-const initialModel = "llama_8b"
+const initialModel = "llamba4_17b"
 const models = [
-    { value: "llama_8b", label: "Meta Llama" },
-    { value: "mixtral_56b", label: "MistralAI Mixtral" },
-    { value: "openai_120b", label: "OpenAI GPT" },
+    { value: "llamba4_17b", label: "Meta Llama 4" },
+    { value: "gemma3n_4b", label: "Google Gemma 3n" },
+    { value: "qwen3_8b", label: "Qwen 3" },
 ]
-const modelMapping = {
-    "llama_8b": "Meta Llama",
-    "mixtral_56b": "MistralAI Mixtral",
-    "openai_120b": "OpenAI GPT",
+const modelMapping: Record<string, string> = {
+    "llamba4_17b": "Meta Llama 4",
+    "gemma3n_4b": "Google Gemma 3n",
+    "qwen3_8b": "Qwen 3",
 }
 
 export default function LLMNode ({
@@ -75,11 +75,17 @@ export default function LLMNode ({
     const [loading, setLoading] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
 
-    const connections = useNodeConnections({
+    const parentConnections = useNodeConnections({
         handleType: 'target',
     })
     const parentNodes = useNodesData<Node>(
-        connections.map((connection) => connection.source),
+        parentConnections.map((connection) => connection.source),
+    )
+    const childConnections = useNodeConnections({
+        handleType: 'source',
+    })
+    const childNodes = useNodesData<Node>(
+        childConnections.map((connection) => connection.target)
     )
 
     useEffect(() => {
@@ -177,6 +183,10 @@ export default function LLMNode ({
             // Add delay to allow promptResponse to be updated in parent node
             setTimeout(() => {
                 setNode(nodeId, {}, false)
+                // Don't create next node if child node already exists
+                if (childNodes.length > 0) {
+                    return
+                }
                 const nextNode = createNextNode(
                     nodeId,
                     {

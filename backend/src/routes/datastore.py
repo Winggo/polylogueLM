@@ -29,13 +29,7 @@ def canvases_operations():
                 'x': (int, float),
                 'y': (int, float),
             },
-            'data': {
-                'model': str,
-                'prompt': str,
-                'prompt_response': str,
-                'parent_ids': [str],
-                'canvasId': str,
-            },
+            'data': dict,
             'selected': bool,
             'measured': {
                 'width': (int, float),
@@ -115,13 +109,7 @@ def canvas_operations(canvas_id):
                 'x': (int, float),
                 'y': (int, float),
             },
-            'data': {
-                'model': str,
-                'prompt': str,
-                'prompt_response': str,
-                'parent_ids': [str],
-                'canvasId': str,
-            },
+            'data': dict,
             'selected': bool,
             'measured': {
                 'width': (int, float),

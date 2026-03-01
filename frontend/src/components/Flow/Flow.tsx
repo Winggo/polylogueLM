@@ -24,17 +24,20 @@ import { CopyFilled } from "@ant-design/icons"
 
 import { useTheme } from "../../context/ThemeContext"
 import LLMNode from "../LLMNode/LlmNode"
+import ImageNode from "../ImageNode/ImageNode"
 import CanvasInfo from "./CanvasInfo"
 import AnimatedConnectionLine from "./AnimatedConnectionLine"
 import {
     llmNodeSize,
     llmNewNodeDeltaX,
+    imageNodeSize,
     backendServerURL,
 } from "../../utils/constants"
 
 
 const nodeTypes = {
     llmText: LLMNode,
+    imageNode: ImageNode,
 }
 
 
@@ -60,11 +63,35 @@ function createNewLlmTextNode(
     return newNode
 }
 
+function createNewImageNode({
+    position,
+    imageDataUrl,
+    fileName,
+    data = {},
+}: {
+    position: { x: number, y: number },
+    imageDataUrl: string,
+    fileName: string,
+    data?: object,
+}): ExtendedNode {
+    return {
+        id: nanoid(10),
+        position,
+        type: 'imageNode',
+        data: { imageDataUrl, fileName, ...data } as ExtendedNodeData,
+        selected: true,
+        origin: [0, 0],
+        measured: imageNodeSize,
+    }
+}
+
 export type ExtendedNodeData = {
     model?: string,
     prompt?: string,
     prompt_response?: string,
     parent_ids?: Array<string>,
+    imageDataUrl?: string,
+    fileName?: string,
     setNode: (nodeId: string, newData: ExtendedNodeData, selected: boolean) => void,
     createNextNode: (fromNodeId: string, newNodePosition: XYPosition, newNodeData: object) => ExtendedNode,
     canvasId: string,
@@ -331,6 +358,39 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
         [setNodes, setEdges, canvasId]
     )
 
+    const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+    }, [])
+
+    const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        const files = Array.from(event.dataTransfer.files)
+        const imageFile = files.find(f =>
+            f.type === 'image/png' || f.type === 'image/jpeg' || f.type === 'image/heic'
+        )
+        if (!imageFile) return
+
+        const dropPosition = reactFlowInstance.screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
+        })
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const imageDataUrl = e.target?.result as string
+            const newNode = createNewImageNode({
+                position: dropPosition,
+                imageDataUrl,
+                fileName: imageFile.name,
+                data: { setNode, createNextNode, canvasId },
+            })
+            setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat(newNode))
+        }
+        reader.readAsDataURL(imageFile)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reactFlowInstance, setNode, createNextNode, canvasId, setNodes])
+
     const handlePaneDoubleClick = useCallback((event: React.MouseEvent) => {
         if (event.detail !== 2) return
         const nodePosition = reactFlowInstance.screenToFlowPosition({
@@ -463,6 +523,8 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     onConnectEnd={onConnectEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                     preventScrolling={false}
                     panOnScroll
                     panOnScrollMode={PanOnScrollMode.Free}

@@ -2,6 +2,7 @@ import json
 import os
 from langchain_together import ChatTogether
 from langchain.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableLambda
 from functools import partial
 from src.db.firestore import get_document_by_collection_and_id
@@ -12,31 +13,31 @@ qwen_7b = ChatTogether(
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
 )
-llama_8b = ChatTogether(
-    model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+llamba4_17b = ChatTogether(
+    model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    together_api_key=os.getenv("TOGETHER_API_KEY"),
+)
+gemma3n_4b = ChatTogether(
+    model="google/gemma-3n-E4B-it",
+    together_api_key=os.getenv("TOGETHER_API_KEY"),
+)
+qwen3_8b = ChatTogether(
+    model="Qwen/Qwen3-VL-8B-Instruct",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
-)
-mixtral_56b = ChatTogether(
-    model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-    together_api_key=os.getenv("TOGETHER_API_KEY"),
-)
-openai_120b = ChatTogether(
-    model="openai/gpt-oss-120b",
-    together_api_key=os.getenv("TOGETHER_API_KEY")
 )
 
 
 def get_model(model_name):
-    if model_name == "llama_8b":
-        llm = llama_8b
-    elif model_name == "mixtral_56b":
-        llm = mixtral_56b
-    elif model_name == "openai_120b":
-        llm = openai_120b
+    if model_name == "llamba4_17b":
+        llm = llamba4_17b
+    elif model_name == "gemma3n_4b":
+        llm = gemma3n_4b
+    elif model_name == "qwen3_8b":
+        llm = qwen3_8b
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
-    
+
     return llm
 
 
@@ -107,10 +108,31 @@ def get_parent_responses(parent_nodes=None) -> list:
 
     prev_chat_responses = []
     for index, node in enumerate(parent_nodes):
-        prompt_response = node["data"]["prompt_response"]
-        prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
+        if node.get("type") == "imageNode":
+            continue
+        prompt_response = node["data"].get("prompt_response", "")
+        if prompt_response:
+            prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
 
     return prev_chat_responses
+
+
+def extract_parent_data(parent_nodes=None):
+    """Returns (text_responses, image_data_urls) from parent nodes."""
+    text_responses = []
+    image_data_urls = []
+
+    for index, node in enumerate(parent_nodes or []):
+        if node.get("type") == "imageNode":
+            data_url = node["data"].get("imageDataUrl", "")
+            if data_url:
+                image_data_urls.append(data_url)
+        else:
+            prompt_response = node["data"].get("prompt_response", "")
+            if prompt_response:
+                text_responses.append(f"Response {index+1}: {prompt_response}")
+
+    return text_responses, image_data_urls
 
 
 def generate_prompt_question(parent_nodes):
@@ -129,19 +151,39 @@ def generate_response_with_context(
         prompt: str,
         parent_nodes: list,
 ):
-    parent_responses = get_parent_responses(parent_nodes=parent_nodes)
-    context = "\n\n".join(parent_responses)
-
+    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
     llm = get_model(model)
 
-    chain = context_prompt_template | llm
+    try:
+        if image_data_urls:
+            content_parts = []
 
-    response_with_context = chain.invoke({
-        "context": context,
-        "prompt": prompt
-    })
-        
-    return response_with_context.content if hasattr(response_with_context, 'content') else str(response_with_context)
+            preamble = """Given the following context text, image data in base64 format, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
+If no context is provided, simply address the prompt by itself. Do not mention the response or context name. Seperate ideas into paragraphs, use bulletpoints, numbered lists, bolded & italicized words or phrases for better readability.
+Add newlines between each bullet point."""
+            content_parts.append({"type": "text", "text": preamble})
+
+            if text_responses:
+                context_text = "\n\n".join(text_responses)
+                text_context = f"*Context:*\n{context_text}\n\n"
+                content_parts.append({"type": "text", "text": text_context})
+
+            for data_url in image_data_urls:
+                content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+
+            content_parts.append({"type": "text", "text": prompt})
+
+            message = HumanMessage(content=content_parts)
+            response = llm.invoke([message])
+        else:
+            context = "\n\n".join(text_responses)
+            chain = context_prompt_template | llm
+            response = chain.invoke({"context": context, "prompt": prompt})
+
+        return response.content if hasattr(response, 'content') else str(response)
+    except Exception as e:
+        print(f"Error generating response: {e}")
+        return "Sorry, I encountered an error processing your request."
 
 
 def get_ancestor_nodes(redis, node_id) -> list:
