@@ -68,6 +68,7 @@ def canvases_operations():
                 doc_id=data["canvasId"]
             )
         except Exception as e:
+            print("Error saving canvas: ", e)
             return jsonify({"error": "Internal Server Error"}), 500
         
         return jsonify({"document_id": doc_id}), 200

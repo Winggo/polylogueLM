@@ -68,18 +68,20 @@ function createNewImageNode({
     imageDataUrl,
     fileName,
     data = {},
+    selected=true,
 }: {
     position: { x: number, y: number },
     imageDataUrl: string,
     fileName: string,
     data?: object,
+    selected?: boolean,
 }): ExtendedNode {
     return {
         id: nanoid(10),
         position,
         type: 'imageNode',
         data: { imageDataUrl, fileName, ...data } as ExtendedNodeData,
-        selected: true,
+        selected,
         origin: [0, 0],
         measured: imageNodeSize,
     }
@@ -379,13 +381,31 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
         const reader = new FileReader()
         reader.onload = (e) => {
             const imageDataUrl = e.target?.result as string
-            const newNode = createNewImageNode({
+            const newImageNode = createNewImageNode({
                 position: dropPosition,
                 imageDataUrl,
                 fileName: imageFile.name,
                 data: { setNode, createNextNode, canvasId },
+                selected: false,
             })
-            setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat(newNode))
+            const newTextNode = createNewLlmTextNode({
+                position: {
+                    x: dropPosition.x + imageNodeSize.width + llmNewNodeDeltaX,
+                    y: dropPosition.y,
+                },
+                data: { setNode, createNextNode, canvasId },
+                origin: [0, 0],
+            })
+            setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat([newImageNode, newTextNode]))
+
+            const newEdge: Edge = createEdge(newImageNode.id, newTextNode.id)
+            setEdges((eds) => eds.concat(newEdge))
+
+            reactFlowInstance.fitView({
+                nodes: [{ id: newImageNode.id }, { id: newTextNode.id }],
+                duration: 1000,
+                padding: 0.07,
+            })
         }
         reader.readAsDataURL(imageFile)
         // eslint-disable-next-line react-hooks/exhaustive-deps
