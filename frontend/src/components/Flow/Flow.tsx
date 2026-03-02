@@ -449,18 +449,26 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     y: clientY,
                 })
 
+                const sourceNode = connectionState.fromNode
+
                 // Clicked on right handle, set the new node position
-                const rightDeltaX = nodePosition.x - connectionState.fromNode.position.x
-                const deltaY = Math.abs(nodePosition.y - connectionState.fromNode.position.y)
+                const rightDeltaX = nodePosition.x - sourceNode.position.x
+                let deltaY
+                if (sourceNode.origin && sourceNode.origin[0] == 0 && sourceNode.origin[1] == 0) {
+                    deltaY = Math.abs(nodePosition.y - sourceNode.position.y - llmNodeSize.height/2)
+                } else {
+                    deltaY = Math.abs(nodePosition.y - sourceNode.position.y)
+                }
+
                 if (((rightDeltaX - llmNodeSize.width) < 50) && deltaY < 100) {
                     nodePosition.x += llmNewNodeDeltaX
                     nodePosition.y -= llmNodeSize.height/2 + 40
                 }
 
                 const nextNode = createNextNode(
-                    connectionState.fromNode.id,
+                    sourceNode.id,
                     nodePosition,
-                    { model: connectionState.fromNode.data.model }
+                    { model: sourceNode.data.model }
                 )
 
                 if (isMobile) {
@@ -471,7 +479,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     )
                 } else {
                     reactFlowInstance.fitView({
-                        nodes: [{ id: connectionState.fromNode.id }, { id: nextNode.id }],
+                        nodes: [{ id: sourceNode.id }, { id: nextNode.id }],
                         duration: 1000,
                         padding: 0.07,
                     })
