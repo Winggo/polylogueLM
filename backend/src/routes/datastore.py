@@ -6,6 +6,7 @@ from src.db.firestore import (
     update_document_in_collection,
 )
 from src.routes.validation.validate import validate_json, OptionalField
+from src.db.storage import upload_base64_image, is_base64_data_url
 
 
 ds_routes = Blueprint("ds_routes", __name__)
@@ -53,6 +54,10 @@ def canvases_operations():
         """
         data = request.json
         try:
+            gcs_client = current_app.config['GCS']
+            bucket_name = current_app.config['GCS_BUCKET']
+            upload_node_images(data["nodes"], data["canvasId"], gcs_client, bucket_name)
+
             doc_id = save_document_in_collection(
                 db,
                 "canvases",
@@ -133,6 +138,9 @@ def canvas_operations(canvas_id):
         try:
             data["updated_at"] = datetime.now()
             if "nodes" in data:
+                gcs_client = current_app.config['GCS']
+                bucket_name = current_app.config['GCS_BUCKET']
+                upload_node_images(data["nodes"], id, gcs_client, bucket_name)
                 data["nodes"] = transform_nodes_arr_to_map(data["nodes"])
             doc_id = update_document_in_collection(db, "canvases", data, doc_id=id)
         except ValueError as e:
@@ -150,6 +158,26 @@ def canvas_operations(canvas_id):
     else:
         return jsonify({"error": "Internal Server Error"}), 500
 
+
+
+def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
+    """
+    For each image node with a base64 imageDataUrl, upload to GCS
+    and replace with the public URL. Mutates nodes in place.
+    """
+    for node in nodes:
+        if node.get("type") == "imageNode":
+            data_url = node.get("data", {}).get("imageDataUrl", "")
+            if is_base64_data_url(data_url):
+                ext = "png" if "png" in data_url[:30] else "jpg"
+                blob_path = f"canvases/{canvas_id}/{node['id']}.{ext}"
+                try:
+                    public_url = upload_base64_image(
+                        gcs_client, bucket_name, blob_path, data_url
+                    )
+                    node["data"]["imageDataUrl"] = public_url
+                except Exception as e:
+                    print(f"Error uploading image for node {node['id']}: {e}")
 
 
 def transform_nodes_arr_to_map(nodes_arr):

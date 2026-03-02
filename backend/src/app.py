@@ -6,6 +6,7 @@ from flask_socketio import SocketIO
 
 from src.redis_listener import start_redis_client, start_redis_pubsub
 from src.db.firestore import start_firestore_project_client
+from src.db.storage import start_storage_client
 
 
 env = os.environ.get("FLASK_ENV", "local")
@@ -24,6 +25,10 @@ socketio = SocketIO(app, cors_allowed_origins='*', transports=['websocket'])
 
 ds_client = start_firestore_project_client(os.environ["GCP_PROJECT"])
 app.config['FIRESTORE'] = ds_client
+
+gcs_client = start_storage_client(os.environ["GCP_PROJECT"])
+app.config['GCS'] = gcs_client
+app.config['GCS_BUCKET'] = os.environ.get("GCS_BUCKET", "polylogue-canvas-images")
 
 
 enable_redis = os.getenv("ENABLE_REDIS", "false").lower() == "true"
