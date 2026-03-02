@@ -8,18 +8,15 @@ from functools import partial
 from src.db.firestore import get_document_by_collection_and_id
 
 
-qwen_7b = ChatTogether(
-    model="Qwen/Qwen2.5-7B-Instruct-Turbo",
-    together_api_key=os.getenv("TOGETHER_API_KEY"),
-    temperature=0.7,
-)
 llamba4_17b = ChatTogether(
     model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
+    temperature=0.7,
 )
 gemma3n_4b = ChatTogether(
     model="google/gemma-3n-E4B-it",
     together_api_key=os.getenv("TOGETHER_API_KEY"),
+    temperature=0.7,
 )
 qwen3_8b = ChatTogether(
     model="Qwen/Qwen3-VL-8B-Instruct",
@@ -35,6 +32,10 @@ def get_model(model_name):
         llm = gemma3n_4b
     elif model_name == "qwen3_8b":
         llm = qwen3_8b
+    elif model_name == "gemini_flash_image":
+        llm = gemini_flash_image
+    elif model_name == "openai_gpt_image":
+        llm = openai_gpt_image
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
 
@@ -102,21 +103,6 @@ def get_parent_responses_from_firestore(db, parent_nodes=None) -> list:
     return prev_chat_responses
 
 
-def get_parent_responses(parent_nodes=None) -> list:
-    if not parent_nodes:
-        return []
-
-    prev_chat_responses = []
-    for index, node in enumerate(parent_nodes):
-        if node.get("type") == "imageNode":
-            continue
-        prompt_response = node["data"].get("prompt_response", "")
-        if prompt_response:
-            prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
-
-    return prev_chat_responses
-
-
 def extract_parent_data(parent_nodes=None):
     """Returns (text_responses, image_data_urls) from parent nodes."""
     text_responses = []
@@ -137,13 +123,37 @@ def extract_parent_data(parent_nodes=None):
 
 def generate_prompt_question(parent_nodes):
     """Generate a prompt suggestion"""
-    parent_responses = get_parent_responses(parent_nodes=parent_nodes)
-    context = "\n\n".join(parent_responses)
+    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
+    context = "\n\n".join(text_responses)
 
-    chain = context_prompt_question_template | qwen_7b
-    prompt_question = chain.invoke({ "context": context })
-    
-    return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)
+    try:
+        if image_data_urls:
+            content_parts = []
+
+            preamble = """Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
+    If no context or image data is provided, generate a question users will be curious to know the answer to.
+    Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
+    *IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*."""
+            content_parts.append({"type": "text", "text": preamble})
+
+            if text_responses:
+                context_text = "\n\n".join(text_responses)
+                text_context = f"*Context:*\n{context_text}\n\n"
+                content_parts.append({"type": "text", "text": text_context})
+
+            for data_url in image_data_urls:
+                content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+
+            message = HumanMessage(content=content_parts)
+            prompt_question = gemma3n_4b.invoke([message])
+        else:
+            chain = context_prompt_question_template | gemma3n_4b
+            prompt_question = chain.invoke({ "context": context })
+        
+        return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)
+    except Exception as e:
+        print(f"Error generating response: {e}")
+        return "Sorry, I encountered an error processing your request."
 
 
 def generate_response_with_context(
