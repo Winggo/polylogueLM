@@ -47,7 +47,7 @@ context_prompt_question_template = PromptTemplate(
     template="""Given the following context, generate an interesting follow up question intended to induce curisoity.
 If no context is provided, generate a question users will be curious to know the answer to.
 Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
-*IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*.
+*IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*.
 *Context:*
 {context}"""
 )
@@ -55,7 +55,8 @@ Always end with a question mark. DO NOT surround the question in quotes. RETURN 
 prompt_question_preamble = """Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
 If no context or image data is provided, generate a question users will be curious to know the answer to.
 Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
-*IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*."""
+*IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*."""
+
 
 
 context_prompt_template = PromptTemplate(
