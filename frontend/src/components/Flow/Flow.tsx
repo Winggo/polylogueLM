@@ -294,17 +294,33 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                 measured: node.measured,
                 origin: node.origin,
             }))
-            const response = await fetch(`${backendServerURL}/ds/v1/canvases`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    canvasId,
-                    title: curCanvasTitle,
-                    nodes: saveNodes,
-                }),
-            })
+
+            let response
+            if (!newCanvas) {
+                response = await fetch(`${backendServerURL}/ds/v1/canvases/${canvasId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        title: curCanvasTitle,
+                        nodes: saveNodes,
+                    }),
+                })
+            } else {
+                response = await fetch(`${backendServerURL}/ds/v1/canvases`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        canvasId,
+                        title: curCanvasTitle,
+                        nodes: saveNodes,
+                    }),
+                })
+            }
+            
             if (response.status === 200) {
                 messageApi.open({
                     type: 'success',

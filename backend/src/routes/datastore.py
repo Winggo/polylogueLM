@@ -6,7 +6,7 @@ from src.db.firestore import (
     update_document_in_collection,
 )
 from src.routes.validation.validate import validate_json, OptionalField
-from src.db.storage import upload_base64_image, is_base64_data_url
+from src.db.storage import upload_base64_image, is_base64_data_url, delete_blobs
 
 
 ds_routes = Blueprint("ds_routes", __name__)
@@ -141,6 +141,7 @@ def canvas_operations(canvas_id):
                 gcs_client = current_app.config['GCS']
                 bucket_name = current_app.config['GCS_BUCKET']
                 upload_node_images(data["nodes"], id, gcs_client, bucket_name)
+                delete_removed_node_images(data["nodes"], id, db, gcs_client, bucket_name)
                 data["nodes"] = transform_nodes_arr_to_map(data["nodes"])
             doc_id = update_document_in_collection(db, "canvases", data, doc_id=id)
         except ValueError as e:
@@ -178,6 +179,33 @@ def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
                     node["data"]["imageDataUrl"] = public_url
                 except Exception as e:
                     print(f"Error uploading image for node {node['id']}: {e}")
+
+
+def delete_removed_node_images(incoming_nodes, canvas_id, db, gcs_client, bucket_name):
+    """
+    Compare incoming nodes with existing nodes in Firestore.
+    Delete GCS blobs for image nodes that were removed.
+    """
+    try:
+        existing_doc = get_document_by_collection_and_id(db, "canvases", canvas_id)
+        existing_nodes = existing_doc.get("nodes", {})
+    except Exception:
+        return
+
+    incoming_ids = {node["id"] for node in incoming_nodes}
+    blob_paths = []
+    for node_id, node in existing_nodes.items():
+        if node.get("type") == "imageNode" and node_id not in incoming_ids:
+            image_url = node.get("data", {}).get("imageDataUrl", "")
+            prefix = f"https://storage.googleapis.com/{bucket_name}/"
+            if image_url.startswith(prefix):
+                blob_paths.append(image_url[len(prefix):])
+
+    if blob_paths:
+        try:
+            delete_blobs(gcs_client, bucket_name, blob_paths)
+        except Exception as e:
+            print(f"Error deleting removed node images: {e}")
 
 
 def transform_nodes_arr_to_map(nodes_arr):

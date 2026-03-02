@@ -38,3 +38,18 @@ def upload_base64_image(storage_client, bucket_name: str, blob_path: str, data_u
     blob.upload_from_string(image_data, content_type=content_type)
 
     return f"https://storage.googleapis.com/{bucket_name}/{blob_path}"
+
+
+def delete_blobs(storage_client, bucket_name: str, blob_paths: list[str]):
+    """
+    Delete multiple blobs from GCS.
+
+    Args:
+        storage_client: GCS client
+        bucket_name: GCS bucket name
+        blob_paths: list of paths within bucket to delete
+    """
+    bucket = storage_client.bucket(bucket_name)
+    for path in blob_paths:
+        blob = bucket.blob(path)
+        blob.delete()
