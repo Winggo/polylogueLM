@@ -15,7 +15,7 @@ def generate_prompt():
     data = request.json
 
     try:
-        prompt_question = generate_prompt_question(data.get("parentNodes", []))
+        prompt_question = generate_prompt_question(data.get("parentNodes", []), model=data.get("model"))
     except Exception as e:
         return jsonify({"error": "Internal Server Error"}), 500
     

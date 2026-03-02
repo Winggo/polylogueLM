@@ -106,6 +106,7 @@ export default function LLMNode ({
                 },
                 body: JSON.stringify({
                     parentNodes,
+                    model,
                 }),
                 signal,
             })

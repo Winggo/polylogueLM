@@ -22,6 +22,8 @@ qwen3_8b = ChatTogether(
     temperature=0.7,
 )
 
+IMAGE_MODELS = ["gemini_flash_image", "openai_gpt_image"]
+
 
 def get_model(model_name):
     if model_name == "llamba4_17b":
@@ -85,7 +87,7 @@ def extract_parent_data(parent_nodes=None):
     return text_responses, image_data_urls
 
 
-def generate_prompt_question(parent_nodes):
+def generate_prompt_question(parent_nodes, model=None):
     """Generate a prompt suggestion"""
     text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
     context = "\n\n".join(text_responses)
