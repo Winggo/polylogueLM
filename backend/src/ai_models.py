@@ -3,8 +3,6 @@ import os
 from langchain_together import ChatTogether
 from langchain.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import RunnableLambda
-from functools import partial
 from src.db.firestore import get_document_by_collection_and_id
 
 
@@ -67,40 +65,6 @@ Add newlines between each bullet point.
 {prompt}"""
 )
 
-
-def get_parent_responses_from_redis(redis, parent_nodes=None) -> list:
-    if not parent_nodes:
-        return []
-
-    prev_chat_responses = []
-    for index, node in enumerate(parent_nodes):
-            node_id = node["id"]
-            if redis.exists(f"node:{node_id}"):
-                prompt_response = redis.hget(f"node:{node_id}", "prompt_response").decode('utf-8')
-                prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
-    return prev_chat_responses
-
-
-def get_parent_responses_from_firestore(db, parent_nodes=None) -> list:
-    if not parent_nodes:
-        return []
-    
-    prev_chat_responses = []
-    canvas_doc_id = parent_nodes[0]["data"].get("canvasId")
-    if not canvas_doc_id:
-        return []
-    try:
-        canvas_doc = get_document_by_collection_and_id(db, "canvases", canvas_doc_id)
-    except ValueError:
-        return []
-    canvas_nodes = canvas_doc["nodes"]
-    for index, node in enumerate(parent_nodes):
-        node_id = node["id"]
-        if node_id in canvas_nodes:
-            prompt_response = canvas_nodes[node_id]["data"].get("prompt_response")
-            if prompt_response:
-                prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
-    return prev_chat_responses
 
 
 def extract_parent_data(parent_nodes=None):
@@ -220,3 +184,38 @@ def get_ancestor_nodes(redis, node_id) -> list:
     get_parent_nodes(node_id)
     ancestor_nodes.pop()
     return ancestor_nodes
+
+
+def get_parent_responses_from_redis(redis, parent_nodes=None) -> list:
+    if not parent_nodes:
+        return []
+
+    prev_chat_responses = []
+    for index, node in enumerate(parent_nodes):
+            node_id = node["id"]
+            if redis.exists(f"node:{node_id}"):
+                prompt_response = redis.hget(f"node:{node_id}", "prompt_response").decode('utf-8')
+                prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
+    return prev_chat_responses
+
+
+def get_parent_responses_from_firestore(db, parent_nodes=None) -> list:
+    if not parent_nodes:
+        return []
+    
+    prev_chat_responses = []
+    canvas_doc_id = parent_nodes[0]["data"].get("canvasId")
+    if not canvas_doc_id:
+        return []
+    try:
+        canvas_doc = get_document_by_collection_and_id(db, "canvases", canvas_doc_id)
+    except ValueError:
+        return []
+    canvas_nodes = canvas_doc["nodes"]
+    for index, node in enumerate(parent_nodes):
+        node_id = node["id"]
+        if node_id in canvas_nodes:
+            prompt_response = canvas_nodes[node_id]["data"].get("prompt_response")
+            if prompt_response:
+                prev_chat_responses.append(f"Response {index+1}: {prompt_response}")
+    return prev_chat_responses
