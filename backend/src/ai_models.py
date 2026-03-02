@@ -52,6 +52,11 @@ Always end with a question mark. DO NOT surround the question in quotes. RETURN 
 {context}"""
 )
 
+prompt_question_preamble = """Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
+If no context or image data is provided, generate a question users will be curious to know the answer to.
+Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
+*IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*."""
+
 
 context_prompt_template = PromptTemplate(
     input_variables=["context", "prompt"],
@@ -67,6 +72,9 @@ Add newlines between each bullet point.
 {prompt}"""
 )
 
+context_prompt_preamble = """Given the following context text, image data in base64 format, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
+If no context is provided, simply address the prompt by itself. Do not mention the response or context name. Seperate ideas into paragraphs, use bulletpoints, numbered lists, bolded & italicized words or phrases for better readability.
+Add newlines between each bullet point."""
 
 
 def extract_parent_data(parent_nodes=None):
@@ -96,11 +104,7 @@ def generate_prompt_question(parent_nodes, model=None):
         if image_data_urls:
             content_parts = []
 
-            preamble = """Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
-    If no context or image data is provided, generate a question users will be curious to know the answer to.
-    Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
-    *IMPORTANT: GENERATED QUESTION NEEDS TO USE LESS THAN 8 WORDS*."""
-            content_parts.append({"type": "text", "text": preamble})
+            content_parts.append({"type": "text", "text": prompt_question_preamble})
 
             if text_responses:
                 context_text = "\n\n".join(text_responses)
@@ -134,10 +138,7 @@ def generate_response_with_context(
         if image_data_urls:
             content_parts = []
 
-            preamble = """Given the following context text, image data in base64 format, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
-If no context is provided, simply address the prompt by itself. Do not mention the response or context name. Seperate ideas into paragraphs, use bulletpoints, numbered lists, bolded & italicized words or phrases for better readability.
-Add newlines between each bullet point."""
-            content_parts.append({"type": "text", "text": preamble})
+            content_parts.append({"type": "text", "text": context_prompt_preamble})
 
             if text_responses:
                 context_text = "\n\n".join(text_responses)
