@@ -466,17 +466,18 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                 })
 
                 const sourceNode = connectionState.fromNode
+                const sourceNodeSize = sourceNode.type === 'imageNode' ? imageNodeSize : llmNodeSize
 
                 // Clicked on right handle, set the new node position
                 const rightDeltaX = nodePosition.x - sourceNode.position.x
                 let deltaY
                 if (sourceNode.origin && sourceNode.origin[0] == 0 && sourceNode.origin[1] == 0) {
-                    deltaY = Math.abs(nodePosition.y - sourceNode.position.y - llmNodeSize.height/2)
+                    deltaY = Math.abs(nodePosition.y - sourceNode.position.y - sourceNodeSize.height/2)
                 } else {
                     deltaY = Math.abs(nodePosition.y - sourceNode.position.y)
                 }
 
-                if (((rightDeltaX - llmNodeSize.width) < 50) && deltaY < 100) {
+                if (((rightDeltaX - sourceNodeSize.width) < 50) && deltaY < 100) {
                     nodePosition.x += llmNewNodeDeltaX
                     nodePosition.y -= llmNodeSize.height/2 + 40
                 }
@@ -561,6 +562,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onInit={() => setFlowRendered(true)}
                     onPaneClick={handlePaneDoubleClick}
                     zoomOnDoubleClick={false}
+                    connectOnClick={false}
                     minZoom={0.3}
                     nodes={nodes}
                     edges={animatedEdges}

@@ -253,10 +253,10 @@ export default function LLMNode ({
                     className={`w-4 h-4 mt-[4px] rounded-lg !bg-white dark:!bg-neutral-950 border-gray-800 dark:border-gray-400 border-2 !cursor-pointer`}
                 />
                 <Tooltip
-                            title={<span className="text-sm">Click to start a branching conversation</span>}
-                            placement="top"
-                            mouseLeaveDelay={0}
-                        >
+                    title={<span className="text-sm">Click or drag to start a branching conversation</span>}
+                    placement="top"
+                    mouseLeaveDelay={0}
+                >
                     <Handle
                         id={nodeId}
                         type="source"
