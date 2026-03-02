@@ -57,6 +57,10 @@ If no context or image data is provided, generate a question users will be curio
 Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
 *IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*."""
 
+image_prompt_question_preamble = """Given the following context text and image data in base 64 format, return an image generation suggestion.
+If no context or image data is provided, return an interesting and creative image generation suggestion.
+DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
+*IMPORTANT: GENERATED SUGGESTION MUST USE LESS THAN 8 WORDS*."""
 
 
 context_prompt_template = PromptTemplate(
@@ -105,7 +109,10 @@ def generate_prompt_question(parent_nodes, model=None):
         if image_data_urls:
             content_parts = []
 
-            content_parts.append({"type": "text", "text": prompt_question_preamble})
+            preamble = prompt_question_preamble
+            if model in IMAGE_MODELS:
+                preamble = image_prompt_question_preamble
+            content_parts.append({"type": "text", "text": preamble})
 
             if text_responses:
                 context_text = "\n\n".join(text_responses)
