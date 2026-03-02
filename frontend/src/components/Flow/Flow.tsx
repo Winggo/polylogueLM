@@ -561,6 +561,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onInit={() => setFlowRendered(true)}
                     onPaneClick={handlePaneDoubleClick}
                     zoomOnDoubleClick={false}
+                    minZoom={0.3}
                     nodes={nodes}
                     edges={animatedEdges}
                     onNodesChange={onNodesChange}
