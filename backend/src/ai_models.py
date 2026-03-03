@@ -42,20 +42,16 @@ def get_model(model_name):
     return llm
 
 
-context_prompt_question_template = PromptTemplate(
-    input_variables=["context"],
-    template="""Given the following context, generate an interesting follow up question intended to induce curisoity.
-If no context is provided, generate a question users will be curious to know the answer to.
-Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
-*IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*.
-*Context:*
-{context}"""
-)
-
-prompt_question_preamble = """Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
-If no context or image data is provided, generate a question users will be curious to know the answer to.
-Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
+prompt_question_closing = """Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
 *IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*."""
+
+no_context_prompt_question_preamble = f"""Generate a question users will be curious to know the answer to.
+{prompt_question_closing}"""
+
+context_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
+There may be no context text or image data provided, in which case generate a fitting question to the best of your ability.
+{prompt_question_closing}"""
+
 
 image_prompt_question_preamble = """Given the following context text and image data in base 64 format, return an image generation suggestion.
 If no context or image data is provided, return an interesting and creative image generation suggestion.
@@ -103,30 +99,29 @@ def extract_parent_data(parent_nodes=None):
 def generate_prompt_question(parent_nodes, model=None):
     """Generate a prompt suggestion"""
     text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
-    context = "\n\n".join(text_responses)
 
     try:
+        content_parts = []
+
+        preamble = no_context_prompt_question_preamble
+        if text_responses or image_data_urls:
+            preamble = context_prompt_question_preamble
+
+        if model in IMAGE_MODELS:
+            preamble = image_prompt_question_preamble
+        content_parts.append({"type": "text", "text": preamble})
+
+        if text_responses:
+            context_text = "\n\n".join(text_responses)
+            text_context = f"*Context:*\n{context_text}\n\n"
+            content_parts.append({"type": "text", "text": text_context})
+
         if image_data_urls:
-            content_parts = []
-
-            preamble = prompt_question_preamble
-            if model in IMAGE_MODELS:
-                preamble = image_prompt_question_preamble
-            content_parts.append({"type": "text", "text": preamble})
-
-            if text_responses:
-                context_text = "\n\n".join(text_responses)
-                text_context = f"*Context:*\n{context_text}\n\n"
-                content_parts.append({"type": "text", "text": text_context})
-
             for data_url in image_data_urls:
                 content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
 
-            message = HumanMessage(content=content_parts)
-            prompt_question = gemma3n_4b.invoke([message])
-        else:
-            chain = context_prompt_question_template | gemma3n_4b
-            prompt_question = chain.invoke({ "context": context })
+        message = HumanMessage(content=content_parts)
+        prompt_question = gemma3n_4b.invoke([message])
         
         return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)
     except Exception as e:
