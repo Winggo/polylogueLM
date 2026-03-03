@@ -1,5 +1,6 @@
 import json
 import os
+from together import Together
 from langchain_together import ChatTogether
 from langchain_core.messages import HumanMessage
 from src.db.firestore import get_document_by_collection_and_id
@@ -21,7 +22,10 @@ qwen3_8b = ChatTogether(
     temperature=0.7,
 )
 
-IMAGE_MODELS = ["gemini_flash_image", "openai_gpt_image"]
+IMAGE_MODELS = ["google/flash-image-2.5", "openai/gpt-image-1.5"]
+
+# Models that accept image_url as input for editing
+IMAGE_INPUT_MODELS = ["openai/gpt-image-1.5"]
 
 
 def get_model(model_name):
@@ -31,10 +35,6 @@ def get_model(model_name):
         llm = gemma3n_4b
     elif model_name == "qwen3_8b":
         llm = qwen3_8b
-    elif model_name == "gemini_flash_image":
-        llm = gemini_flash_image
-    elif model_name == "openai_gpt_image":
-        llm = openai_gpt_image
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
 
@@ -152,6 +152,70 @@ def generate_response_with_context(
     except Exception as e:
         print(f"Error generating response: {e}")
         return "Sorry, I encountered an error processing your request."
+
+
+def describe_images(image_data_urls):
+    """Use gemma3n_4b to describe parent images as text for image gen context."""
+    descriptions = []
+    for data_url in image_data_urls:
+        try:
+            message = HumanMessage(content=[
+                {"type": "text", "text": "Describe this image concisely in 1-2 sentences."},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ])
+            response = gemma3n_4b.invoke([message])
+            desc = response.content if hasattr(response, 'content') else str(response)
+            descriptions.append(desc)
+        except Exception as e:
+            print(f"Error describing image: {e}")
+    return descriptions
+
+
+def generate_image_with_context(
+    model: str,
+    prompt: str,
+    parent_nodes: list,
+):
+    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
+
+    # Build enriched prompt with parent text context
+    full_prompt = prompt
+    context_parts = []
+    if text_responses:
+        context_parts.extend(text_responses)
+
+    # Handle image context based on model capability
+    image_url_param = None
+    if image_data_urls:
+        if model in IMAGE_INPUT_MODELS:
+            # GPT Image 1.5: pass first image directly via image_url
+            image_url_param = image_data_urls[0]
+        else:
+            # Nano Banana: describe images as text since it only accepts text input
+            image_descriptions = describe_images(image_data_urls)
+            context_parts.extend([f"Image description: {d}" for d in image_descriptions])
+
+    if context_parts:
+        context = "\n".join(context_parts)
+        full_prompt = f"Context: {context}\n\nPrompt: {prompt}"
+
+    try:
+        client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+        kwargs = dict(
+            model=model,
+            prompt=full_prompt,
+            response_format="base64",
+        )
+        if image_url_param:
+            kwargs["image_url"] = image_url_param
+
+        response = client.images.generate(**kwargs)
+        b64_json = response.data[0].b64_json
+        return f"data:image/png;base64,{b64_json}"
+    except Exception as e:
+        print(f"Error generating image: {e}")
+        return "Sorry, I encountered an error generating the image."
+
 
 
 def get_ancestor_nodes(redis, node_id) -> list:

@@ -13,4 +13,4 @@ export const backendServerURL = process.env.NEXT_PUBLIC_BACKEND_ROOT_URL || 'htt
 
 export const initialModel = "llamba4_17b"
 export const NON_IMAGE_MODELS = ["llamba4_17b", "gemma3n_4b", "qwen3_8b"]
-export const IMAGE_MODELS = ["gemini_flash_image", "openai_gpt_image"]
+export const IMAGE_MODELS = ["google/flash-image-2.5", "openai/gpt-image-1.5"]

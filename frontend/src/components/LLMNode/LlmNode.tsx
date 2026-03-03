@@ -41,11 +41,15 @@ const models = [
     { value: "llamba4_17b", label: "Meta Llama 4" },
     { value: "gemma3n_4b", label: "Google Gemma 3n" },
     { value: "qwen3_8b", label: "Qwen 3" },
+    { value: "google/flash-image-2.5", label: "Google Nano Banana" },
+    { value: "openai/gpt-image-1.5", label: "OpenAI GPT Image 1.5" },
 ]
 const modelMapping: Record<string, string> = {
     "llamba4_17b": "Meta Llama 4",
     "gemma3n_4b": "Google Gemma 3n",
     "qwen3_8b": "Qwen 3",
+    "google/flash-image-2.5": "Google Nano Banana",
+    "openai/gpt-image-1.5": "OpenAI GPT Image 1.5",
 }
 
 export default function LLMNode ({
@@ -356,6 +360,13 @@ export default function LLMNode ({
         if (loading) {
             return <Skeleton active paragraph={{rows: 10}} className="mt-[10px]" />
         } else if (promptResponse) {
+            if (promptResponse.startsWith("data:image/")) {
+                return (
+                    <div className="p-1.5 w-full flex items-center justify-center">
+                        <img src={promptResponse} alt="Generated image" className="max-w-full max-h-full object-contain rounded-lg" />
+                    </div>
+                )
+            }
             return (
                 <div className="prompt-output p-1.5 w-full focus:outline-none resize-none select-text cursor-text">
                     <ReactMarkdown>{promptResponse}</ReactMarkdown>

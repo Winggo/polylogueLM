@@ -3,6 +3,8 @@ from flask import Blueprint, jsonify, request
 from src.ai_models import (
     generate_prompt_question,
     generate_response_with_context,
+    IMAGE_MODELS,
+    generate_image_with_context,
 )
 
 
@@ -33,14 +35,24 @@ def generate():
             return jsonify({"error": f"{key} is required"}), 400
 
     try:
-        prompt_completion = generate_response_with_context(
-            model=model,
-            prompt=prompt,
-            parent_nodes=data.get("parentNodes", []),
-        )
+        if model in IMAGE_MODELS:
+            image_completion = generate_image_with_context(
+                model=model,
+                prompt=prompt,
+                parent_nodes=data.get("parentNodes", []),
+            )
+
+            return jsonify({"response": image_completion}), 200
+        else:
+            prompt_completion = generate_response_with_context(
+                model=model,
+                prompt=prompt,
+                parent_nodes=data.get("parentNodes", []),
+            )
+
+            return jsonify({"response": prompt_completion}), 200
+
     except ValueError as e:
         return jsonify({"error": "Input Error"}), 400
     except Exception as e:
         return jsonify({"error": "Internal Server Error"}), 500
-    
-    return jsonify({"response": prompt_completion}), 200
