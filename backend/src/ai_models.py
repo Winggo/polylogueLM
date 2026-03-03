@@ -1,7 +1,6 @@
 import json
 import os
 from langchain_together import ChatTogether
-from langchain.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage
 from src.db.firestore import get_document_by_collection_and_id
 
@@ -63,20 +62,6 @@ with_context_image_prompt_question_preamble = f"""Given the following context te
 If no context or image data is provided, return an interesting and creative image generation suggestion.
 {image_prompt_question_closing}"""
 
-
-context_prompt_template = PromptTemplate(
-    input_variables=["context", "prompt"],
-    template="""Given the following context and prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
-There may be no context provided. Do not mention the response or context name.
-Seperate ideas into paragraphs, use bullet points, numbered lists, bolded & italicized words or phrases for better readability.
-Add newlines between each bullet point.
-*Context:*
-{context}
-
-----------------------------------------------------------------------------
-*Prompt:*
-{prompt}"""
-)
 
 context_prompt_preamble = """Given the following context text, image data in base64 format, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
 If no context is provided, simply address the prompt by itself. Do not mention the response or context name. Seperate ideas into paragraphs, use bulletpoints, numbered lists, bolded & italicized words or phrases for better readability.
@@ -146,27 +131,22 @@ def generate_response_with_context(
     llm = get_model(model)
 
     try:
+        content_parts = []
+        content_parts.append({"type": "text", "text": context_prompt_preamble})
+
+        if text_responses:
+            context_text = "\n\n".join(text_responses)
+            text_context = f"*Context:*\n{context_text}\n\n"
+            content_parts.append({"type": "text", "text": text_context})
+
         if image_data_urls:
-            content_parts = []
-
-            content_parts.append({"type": "text", "text": context_prompt_preamble})
-
-            if text_responses:
-                context_text = "\n\n".join(text_responses)
-                text_context = f"*Context:*\n{context_text}\n\n"
-                content_parts.append({"type": "text", "text": text_context})
-
             for data_url in image_data_urls:
                 content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
 
-            content_parts.append({"type": "text", "text": prompt})
+        content_parts.append({"type": "text", "text": prompt})
 
-            message = HumanMessage(content=content_parts)
-            response = llm.invoke([message])
-        else:
-            context = "\n\n".join(text_responses)
-            chain = context_prompt_template | llm
-            response = chain.invoke({"context": context, "prompt": prompt})
+        message = HumanMessage(content=content_parts)
+        response = llm.invoke([message])
 
         return response.content if hasattr(response, 'content') else str(response)
     except Exception as e:
