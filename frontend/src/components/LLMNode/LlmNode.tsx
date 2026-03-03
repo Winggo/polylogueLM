@@ -37,7 +37,6 @@ type LLMNodeProps = {
     positionAbsoluteY: number
 }
 
-const initialModel = "llamba4_17b"
 const models = [
     { value: "llamba4_17b", label: "Meta Llama 4" },
     { value: "gemma3n_4b", label: "Google Gemma 3n" },
