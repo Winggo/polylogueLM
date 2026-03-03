@@ -48,15 +48,20 @@ prompt_question_closing = """Always end with a question mark. DO NOT surround th
 no_context_prompt_question_preamble = f"""Generate a question users will be curious to know the answer to.
 {prompt_question_closing}"""
 
-context_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
+with_context_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
 There may be no context text or image data provided, in which case generate a fitting question to the best of your ability.
 {prompt_question_closing}"""
 
 
-image_prompt_question_preamble = """Given the following context text and image data in base 64 format, return an image generation suggestion.
-If no context or image data is provided, return an interesting and creative image generation suggestion.
-DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
+image_prompt_question_closing = """Start the suggestion with "Generate an image of...".
 *IMPORTANT: GENERATED SUGGESTION MUST USE LESS THAN 8 WORDS*."""
+
+no_context_image_prompt_question_preamble = f"""Return an interesting and creative image generation suggestion.
+{image_prompt_question_closing}"""
+
+with_context_image_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, return an image generation suggestion.
+If no context or image data is provided, return an interesting and creative image generation suggestion.
+{image_prompt_question_closing}"""
 
 
 context_prompt_template = PromptTemplate(
@@ -105,10 +110,13 @@ def generate_prompt_question(parent_nodes, model=None):
 
         preamble = no_context_prompt_question_preamble
         if text_responses or image_data_urls:
-            preamble = context_prompt_question_preamble
+            preamble = with_context_prompt_question_preamble
 
         if model in IMAGE_MODELS:
-            preamble = image_prompt_question_preamble
+            preamble = no_context_image_prompt_question_preamble
+            if text_responses or image_data_urls:
+                preamble = with_context_image_prompt_question_preamble
+
         content_parts.append({"type": "text", "text": preamble})
 
         if text_responses:
