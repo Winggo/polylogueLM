@@ -158,7 +158,7 @@ def describe_images(image_data_urls):
     for data_url in image_data_urls:
         try:
             message = HumanMessage(content=[
-                {"type": "text", "text": "Describe this image concisely in 1-2 sentences."},
+                {"type": "text", "text": "Describe this image concisely in 2-3 sentences. Specify colors, subjects, style, composition, and overall mood."},
                 {"type": "image_url", "image_url": {"url": data_url}},
             ])
             response = gemma3n_4b.invoke([message])

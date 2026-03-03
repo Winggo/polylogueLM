@@ -413,7 +413,7 @@ export default function LLMNode ({
             }
             return <Skeleton active paragraph={{rows: 10}} className="mt-[10px]" />
         } else if (promptResponse) {
-            if (promptResponse.startsWith("data:image/")) {
+            if (promptResponse.startsWith("data:image/") || /^https?:\/\/.+\.(png|jpg|jpeg|webp)$/i.test(promptResponse)) {
                 return (
                     <div className="p-1.5 w-full flex items-center justify-center">
                         <img src={promptResponse} alt="Generated image" className="max-w-full max-h-full object-contain rounded-lg" />

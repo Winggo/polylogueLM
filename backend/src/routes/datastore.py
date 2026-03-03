@@ -163,8 +163,11 @@ def canvas_operations(canvas_id):
 
 def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
     """
-    For each image node with a base64 imageDataUrl, upload to GCS
+    For each node with a base64 image, upload to GCS
     and replace with the public URL. Mutates nodes in place.
+    Handles:
+    - imageNode: base64 in data.imageDataUrl
+    - llmText: base64 in data.prompt_response (generated images)
     """
     for node in nodes:
         if node.get("type") == "imageNode":
@@ -179,6 +182,18 @@ def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
                     node["data"]["imageDataUrl"] = public_url
                 except Exception as e:
                     print(f"Error uploading image for node {node['id']}: {e}")
+        elif node.get("type") == "llmText":
+            prompt_response = node.get("data", {}).get("prompt_response", "")
+            if is_base64_data_url(prompt_response):
+                ext = "png" if "png" in prompt_response[:30] else "jpg"
+                blob_path = f"canvases/{canvas_id}/{node['id']}_response.{ext}"
+                try:
+                    public_url = upload_base64_image(
+                        gcs_client, bucket_name, blob_path, prompt_response
+                    )
+                    node["data"]["prompt_response"] = public_url
+                except Exception as e:
+                    print(f"Error uploading generated image for node {node['id']}: {e}")
 
 
 def delete_removed_node_images(incoming_nodes, canvas_id, db, gcs_client, bucket_name):
@@ -194,12 +209,17 @@ def delete_removed_node_images(incoming_nodes, canvas_id, db, gcs_client, bucket
 
     incoming_ids = {node["id"] for node in incoming_nodes}
     blob_paths = []
+    prefix = f"https://storage.googleapis.com/{bucket_name}/"
     for node_id, node in existing_nodes.items():
-        if node.get("type") == "imageNode" and node_id not in incoming_ids:
-            image_url = node.get("data", {}).get("imageDataUrl", "")
-            prefix = f"https://storage.googleapis.com/{bucket_name}/"
-            if image_url.startswith(prefix):
-                blob_paths.append(image_url[len(prefix):])
+        if node_id not in incoming_ids:
+            if node.get("type") == "imageNode":
+                image_url = node.get("data", {}).get("imageDataUrl", "")
+                if image_url.startswith(prefix):
+                    blob_paths.append(image_url[len(prefix):])
+            elif node.get("type") == "llmText":
+                prompt_response = node.get("data", {}).get("prompt_response", "")
+                if prompt_response.startswith(prefix):
+                    blob_paths.append(prompt_response[len(prefix):])
 
     if blob_paths:
         try:
