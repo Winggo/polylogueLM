@@ -24,6 +24,7 @@ import {
     initialModel,
     IMAGE_MODELS,
     NON_IMAGE_MODELS,
+    imageProgressMessages,
 } from "../../utils/constants"
 import { usePrevious } from "../../utils/helpers"
 
@@ -181,7 +182,8 @@ export default function LLMNode ({
 
     const submitPrompt = async () => {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 15000)
+        const timeout = IMAGE_MODELS.includes(model) ? 90000 : 15000
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
         setLoading(true)
 
         try {
@@ -356,8 +358,59 @@ export default function LLMNode ({
         </>
     )
 
+    const [imageProgress, setImageProgress] = useState(0)
+    const [imageProgressMsg, setImageProgressMsg] = useState("")
+
+    useEffect(() => {
+        if (!loading || !IMAGE_MODELS.includes(model)) {
+            setImageProgress(0)
+            setImageProgressMsg("")
+            return
+        }
+        // Pick a random starting message
+        const shuffled = [...imageProgressMessages].sort(() => Math.random() - 0.5)
+        let msgIndex = 0
+        setImageProgressMsg(shuffled[0])
+
+        const msgTimer = setInterval(() => {
+            msgIndex = (msgIndex + 1) % shuffled.length
+            setImageProgressMsg(shuffled[msgIndex])
+        }, 3000)
+
+        const estimatedDuration = 25000
+        const interval = 200
+        const increment = (interval / estimatedDuration) * 90
+        const progressTimer = setInterval(() => {
+            setImageProgress(prev => {
+                if (prev >= 90) return prev + 0.1
+                return prev + increment
+            })
+        }, interval)
+
+        return () => {
+            clearInterval(msgTimer)
+            clearInterval(progressTimer)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, model])
+
     const renderOutput = () => {
         if (loading) {
+            if (IMAGE_MODELS.includes(model)) {
+                return (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+                        <div className="w-[70%] h-2 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gray-700 dark:bg-gray-300 rounded-full transition-all duration-200 ease-linear"
+                                style={{ width: `${Math.min(imageProgress, 99)}%` }}
+                            />
+                        </div>
+                        <span className="text-gray-700 dark:text-gray-300 text-md">
+                            {imageProgressMsg}
+                        </span>
+                    </div>
+                )
+            }
             return <Skeleton active paragraph={{rows: 10}} className="mt-[10px]" />
         } else if (promptResponse) {
             if (promptResponse.startsWith("data:image/")) {
