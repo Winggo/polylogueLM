@@ -25,8 +25,6 @@ qwen3_8b = ChatTogether(
 IMAGE_MODELS = ["google/flash-image-2.5", "openai/gpt-image-1.5"]
 
 # Models that accept image_url as input for editing
-IMAGE_INPUT_MODELS = ["openai/gpt-image-1.5"]
-
 
 def get_model(model_name):
     if model_name == "llamba4_17b":
@@ -184,16 +182,9 @@ def generate_image_with_context(
     if text_responses:
         context_parts.extend(text_responses)
 
-    # Handle image context based on model capability
-    image_url_param = None
     if image_data_urls:
-        if model in IMAGE_INPUT_MODELS:
-            # GPT Image 1.5: pass first image directly via image_url
-            image_url_param = image_data_urls[0]
-        else:
-            # Nano Banana: describe images as text since it only accepts text input
-            image_descriptions = describe_images(image_data_urls)
-            context_parts.extend([f"Image description: {d}" for d in image_descriptions])
+        image_descriptions = describe_images(image_data_urls)
+        context_parts.extend([f"Image description: {d}" for d in image_descriptions])
 
     if context_parts:
         context = "\n".join(context_parts)
@@ -201,15 +192,11 @@ def generate_image_with_context(
 
     try:
         client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
-        kwargs = dict(
+        response = client.images.generate(
             model=model,
             prompt=full_prompt,
             response_format="base64",
         )
-        if image_url_param:
-            kwargs["image_url"] = image_url_param
-
-        response = client.images.generate(**kwargs)
         b64_json = response.data[0].b64_json
         return f"data:image/png;base64,{b64_json}"
     except Exception as e:
