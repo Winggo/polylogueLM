@@ -21,7 +21,12 @@ import {
     backendServerURL,
     llmNodeSize,
     llmNewNodeDeltaX,
+    initialModel,
+    IMAGE_MODELS,
+    NON_IMAGE_MODELS,
 } from "../../utils/constants"
+import { usePrevious } from "../../utils/helpers"
+
 
 
 type LLMNodeProps = {
@@ -68,6 +73,7 @@ export default function LLMNode ({
     const [placeholderIndex, setPlaceholderIndex] = useState(0)
 
     const [model, setModel] = useState<keyof typeof modelMapping>(existingModel || initialModel)
+    const prevModel = usePrevious(model)
     const [prompt, setPrompt] = useState(exstingPrompt || "")
     
     const [promptResponse, setPromptResponse] = useState(existingResponse || "")
@@ -112,6 +118,8 @@ export default function LLMNode ({
             })
             const { prompt } = await response.json()
             setPlaceholder(prompt)
+            setPlaceholderIndex(0)
+            setCurPlaceholder("⇥ ")
         } catch {
         }
     }
@@ -119,6 +127,17 @@ export default function LLMNode ({
     // Fetch prompt suggestion on creation
     useEffect(() => {
         if (prompt) return
+        
+        // Only fetch on initial render or if model output modality changed
+        // ex: text -> image, image -> text
+        if (placeholder &&
+            IMAGE_MODELS.includes(prevModel) &&
+            IMAGE_MODELS.includes(model)
+        ) return
+        if (placeholder &&
+            NON_IMAGE_MODELS.includes(prevModel) &&
+            NON_IMAGE_MODELS.includes(model)
+        ) return
 
         // Prevent fetching twice
         const controller = new AbortController()
@@ -128,7 +147,7 @@ export default function LLMNode ({
             controller.abort()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [model])
 
     // Add prompt suggestion incremental typing affect
     useEffect(() => {
