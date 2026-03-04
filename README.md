@@ -16,13 +16,14 @@ Each prompt & completion is represented as a tree node, and different models can
 - Explore templating conversations for different use cases
 
 ## Stack
-- Next.js & tailwind
+- Next.js & Tailwind
 - Flask
 - Redis
 - Firestore
+- GCP Storage
+- GCP Compute Engine
 - Langchain
 - Together.ai
-- GCP
 
 ## Deployment
 This app is deployed using Google App Engine.
