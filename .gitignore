@@ -53,3 +53,7 @@ backend/app.yaml
 frontend/app.yaml
 *creds.json
 
+# agents
+.claude/
+!agents/archive/
+!angents/plans/
