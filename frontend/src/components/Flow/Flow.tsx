@@ -32,6 +32,8 @@ import {
     llmNewNodeDeltaX,
     imageNodeSize,
     backendServerURL,
+    flowViewMinZoom,
+    flowViewMaxZoom,
 } from "../../utils/constants"
 
 
@@ -204,7 +206,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                 const existingIds = new Set(eds.map(e => e.id))
                 return eds.concat(edgesForExistingNodes.filter(e => !existingIds.has(e.id)))
             })
-            reactFlowInstance.fitView({ minZoom: 0.5, maxZoom: 0.9 })
+            reactFlowInstance.fitView({ minZoom: flowViewMinZoom, maxZoom: flowViewMaxZoom })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [existingNodes])
@@ -563,7 +565,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                     onPaneClick={handlePaneDoubleClick}
                     zoomOnDoubleClick={false}
                     connectOnClick={false}
-                    minZoom={0.3}
+                    minZoom={flowViewMinZoom}
                     nodes={nodes}
                     edges={animatedEdges}
                     onNodesChange={onNodesChange}

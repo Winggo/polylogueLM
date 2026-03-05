@@ -8,6 +8,8 @@ export const imageNodeSize = {
     width: 600,
     height: 450,
 }
+export const flowViewMinZoom = 0.3
+export const flowViewMaxZoom = 0.9
 
 export const backendServerURL = process.env.NEXT_PUBLIC_BACKEND_ROOT_URL || 'http://127.0.0.1:5000'
 
