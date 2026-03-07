@@ -8,6 +8,10 @@ export const imageNodeSize = {
     width: 600,
     height: 450,
 }
+export const videoNodeSize = {
+    width: 600,
+    height: 450,
+}
 export const flowViewMinZoom = 0.3
 export const flowViewMaxZoom = 0.9
 
@@ -16,6 +20,13 @@ export const backendServerURL = process.env.NEXT_PUBLIC_BACKEND_ROOT_URL || 'htt
 export const initialModel = "llamba4_17b"
 export const NON_IMAGE_MODELS = ["llamba4_17b", "gemma3n_4b", "qwen3_8b"]
 export const IMAGE_MODELS = ["google/flash-image-2.5", "openai/gpt-image-1.5"]
+export const VIDEO_MODEL = "gemini-2.0-flash"
+export const VIDEO_MIME_TYPES = [
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "video/x-msvideo",
+]
 
 export const imageProgressMessages = [
     "Warming up the pixels...",

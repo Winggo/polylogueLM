@@ -1,30 +1,75 @@
+import base64
 import json
 import os
 from together import Together
 from langchain_together import ChatTogether
 from langchain_core.messages import HumanMessage
+from google import genai
+from google.genai import types
 from src.db.firestore import get_document_by_collection_and_id
 
+TOGETHER_MODEL_IDS = {
+    "llamba4_17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    "gemma3n_4b": "google/gemma-3n-E4B-it",
+    "qwen3_8b": "Qwen/Qwen3-VL-8B-Instruct",
+}
 
 llamba4_17b = ChatTogether(
-    model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    model=TOGETHER_MODEL_IDS["llamba4_17b"],
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
 )
 gemma3n_4b = ChatTogether(
-    model="google/gemma-3n-E4B-it",
+    model=TOGETHER_MODEL_IDS["gemma3n_4b"],
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
 )
 qwen3_8b = ChatTogether(
-    model="Qwen/Qwen3-VL-8B-Instruct",
+    model=TOGETHER_MODEL_IDS["qwen3_8b"],
     together_api_key=os.getenv("TOGETHER_API_KEY"),
     temperature=0.7,
 )
 
 IMAGE_MODELS = ["google/flash-image-2.5", "openai/gpt-image-1.5"]
 
-# Models that accept image_url as input for editing
+GEMINI_VIDEO_MODEL = "gemini-2.0-flash"
+
+
+def _get_gemini_client():
+    return genai.Client(
+        vertexai=True,
+        project=os.getenv("GCP_PROJECT"),
+        location=os.getenv("GEMINI_LOCATION", "us-central1"),
+    )
+
+
+def _make_gemini_video_part(video_url):
+    """Create a Gemini Part from a video — GCS HTTPS URL or base64 data URL."""
+    if video_url.startswith("data:"):
+        header, b64_data = video_url.split(",", 1)
+        mime_type = header.split(";")[0].split(":")[1]
+        return types.Part.from_bytes(data=base64.b64decode(b64_data), mime_type=mime_type)
+    if video_url.startswith("https://storage.googleapis.com/"):
+        gcs_uri = "gs://" + video_url[len("https://storage.googleapis.com/"):]
+        ext = video_url.rsplit(".", 1)[-1].lower()
+        mime_type = {"webm": "video/webm", "mov": "video/quicktime"}.get(ext, "video/mp4")
+        return types.Part.from_uri(file_uri=gcs_uri, mime_type=mime_type)
+    return types.Part.from_uri(file_uri=video_url, mime_type="video/mp4")
+
+
+def _make_gemini_image_part(data_url):
+    """Create a Gemini Part from an image — GCS HTTPS URL or base64 data URL."""
+    if data_url.startswith("data:"):
+        header, b64_data = data_url.split(",", 1)
+        mime_type = header.split(";")[0].split(":")[1]
+        return types.Part.from_bytes(data=base64.b64decode(b64_data), mime_type=mime_type)
+    if data_url.startswith("https://storage.googleapis.com/"):
+        gcs_uri = "gs://" + data_url[len("https://storage.googleapis.com/"):]
+        ext = data_url.rsplit(".", 1)[-1].lower().split("?")[0]
+        mime_type = {"png": "image/png", "gif": "image/gif", "webp": "image/webp"}.get(ext, "image/jpeg")
+        return types.Part.from_uri(file_uri=gcs_uri, mime_type=mime_type)
+    return types.Part.from_uri(file_uri=data_url, mime_type="image/jpeg")
+
 
 def get_model(model_name):
     if model_name == "llamba4_17b":
@@ -39,14 +84,23 @@ def get_model(model_name):
     return llm
 
 
+def get_together_model_name(model_name):
+    if model_name not in TOGETHER_MODEL_IDS:
+        raise ValueError(f"Unsupported model type: {model_name}")
+    return TOGETHER_MODEL_IDS[model_name]
+
+
 prompt_question_closing = """Always end with a question mark. DO NOT surround the question in quotes. RETURN ENGLISH ONLY.
 *IMPORTANT: GENERATED QUESTION MUST USE LESS THAN 8 WORDS*."""
 
 no_context_prompt_question_preamble = f"""Generate a question users will be curious to know the answer to.
 {prompt_question_closing}"""
 
-with_context_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, generate an interesting follow up question intended to induce curisoity.
-There may be no context text or image data provided, in which case generate a fitting question to the best of your ability.
+with_context_prompt_question_preamble = f"""Given the following context text, image data, and video data, generate an interesting follow up question intended to induce curisoity.
+There may be no context text, image data, or video data provided, in which case generate a fitting question to the best of your ability.
+{prompt_question_closing}"""
+
+video_prompt_question_preamble = f"""Analyze the provided video content and generate an interesting follow up question intended to induce curiosity.
 {prompt_question_closing}"""
 
 
@@ -56,48 +110,69 @@ image_prompt_question_closing = """Start the suggestion with "Generate an image 
 no_context_image_prompt_question_preamble = f"""Return an interesting and creative image generation suggestion.
 {image_prompt_question_closing}"""
 
-with_context_image_prompt_question_preamble = f"""Given the following context text and image data in base 64 format, return an image generation suggestion.
-If no context or image data is provided, return an interesting and creative image generation suggestion.
+with_context_image_prompt_question_preamble = f"""Given the following context text and image data, return an image generation suggestion.
+If no context, image data, or video data is provided, return an interesting and creative image generation suggestion.
 {image_prompt_question_closing}"""
 
 
-context_prompt_preamble = """Given the following context text, image data in base64 format, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
+context_prompt_preamble = """Given the following context text, image data, video data, and user prompt, reply thoughtfully in *LESS THAN 150 WORDS*.
 If no context is provided, simply address the prompt by itself. Do not mention the response or context name. Seperate ideas into paragraphs, use bulletpoints, numbered lists, bolded & italicized words or phrases for better readability.
 Add newlines between each bullet point."""
 
 
 def extract_parent_data(parent_nodes=None):
-    """Returns (text_responses, image_data_urls) from parent nodes."""
+    """Returns (text_responses, image_data_urls, video_data_urls) from parent nodes."""
     text_responses = []
     image_data_urls = []
+    video_data_urls = []
 
     for index, node in enumerate(parent_nodes or []):
+        node_data = node.get("data", {})
         if node.get("type") == "imageNode":
-            data_url = node["data"].get("imageDataUrl", "")
+            data_url = node_data.get("imageDataUrl", "")
             if data_url:
                 image_data_urls.append(data_url)
+        elif node.get("type") == "videoNode":
+            data_url = node_data.get("videoDataUrl", "")
+            if data_url:
+                video_data_urls.append(data_url)
         else:
-            prompt_response = node["data"].get("prompt_response", "")
+            prompt_response = node_data.get("prompt_response", "")
             if prompt_response:
                 text_responses.append(f"Response {index+1}: {prompt_response}")
 
-    return text_responses, image_data_urls
+    return text_responses, image_data_urls, video_data_urls
 
 
 def generate_prompt_question(parent_nodes, model=None):
     """Generate a prompt suggestion"""
-    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
+    text_responses, image_data_urls, video_data_urls = extract_parent_data(parent_nodes=parent_nodes)
 
     try:
         content_parts = []
 
+        if video_data_urls:
+            try:
+                gemini = _get_gemini_client()
+                parts = [video_prompt_question_preamble]
+                for video_url in video_data_urls:
+                    parts.append(_make_gemini_video_part(video_url))
+                response = gemini.models.generate_content(
+                    model=GEMINI_VIDEO_MODEL,
+                    contents=parts,
+                )
+                return response.text
+            except Exception as e:
+                print(f"Error generating video prompt question with Gemini: {e}")
+                return "Sorry, I encountered an error processing your request."
+
         preamble = no_context_prompt_question_preamble
-        if text_responses or image_data_urls:
+        if text_responses or image_data_urls or video_data_urls:
             preamble = with_context_prompt_question_preamble
 
         if model in IMAGE_MODELS:
             preamble = no_context_image_prompt_question_preamble
-            if text_responses or image_data_urls:
+            if text_responses or image_data_urls or video_data_urls:
                 preamble = with_context_image_prompt_question_preamble
 
         content_parts.append({"type": "text", "text": preamble})
@@ -125,27 +200,44 @@ def generate_response_with_context(
         prompt: str,
         parent_nodes: list,
 ):
-    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
-    llm = get_model(model)
+    text_responses, image_data_urls, video_data_urls = extract_parent_data(parent_nodes=parent_nodes)
+    content_parts = [{"type": "text", "text": context_prompt_preamble}]
 
-    try:
-        content_parts = []
-        content_parts.append({"type": "text", "text": context_prompt_preamble})
+    if text_responses:
+        context_text = "\n\n".join(text_responses)
+        text_context = f"*Context:*\n{context_text}\n\n"
+        content_parts.append({"type": "text", "text": text_context})
 
-        if text_responses:
-            context_text = "\n\n".join(text_responses)
-            text_context = f"*Context:*\n{context_text}\n\n"
-            content_parts.append({"type": "text", "text": text_context})
+    if image_data_urls:
+        for data_url in image_data_urls:
+            content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
 
-        if image_data_urls:
+    if video_data_urls:
+        try:
+            gemini = _get_gemini_client()
+            parts = [context_prompt_preamble]
+            if text_responses:
+                context_text = "\n\n".join(text_responses)
+                parts.append(f"*Context:*\n{context_text}\n\n")
             for data_url in image_data_urls:
-                content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+                parts.append(_make_gemini_image_part(data_url))
+            for video_url in video_data_urls:
+                parts.append(_make_gemini_video_part(video_url))
+            parts.append(prompt)
+            response = gemini.models.generate_content(
+                model=GEMINI_VIDEO_MODEL,
+                contents=parts,
+            )
+            return response.text
+        except Exception as e:
+            print(f"Error generating response with video context: {e}")
+            return "Sorry, I encountered an error processing your request."
 
+    llm = get_model(model)
+    try:
         content_parts.append({"type": "text", "text": prompt})
-
         message = HumanMessage(content=content_parts)
         response = llm.invoke([message])
-
         return response.content if hasattr(response, 'content') else str(response)
     except Exception as e:
         print(f"Error generating response: {e}")
@@ -174,7 +266,7 @@ def generate_image_with_context(
     prompt: str,
     parent_nodes: list,
 ):
-    text_responses, image_data_urls = extract_parent_data(parent_nodes=parent_nodes)
+    text_responses, image_data_urls, _ = extract_parent_data(parent_nodes=parent_nodes)
 
     # Build enriched prompt with parent text context
     full_prompt = prompt

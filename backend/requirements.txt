@@ -51,6 +51,7 @@ langchain-openai==0.3.11
 langchain-text-splitters==0.3.8
 langchain-together==0.3.0
 together>=1.0.0
+google-genai>=1.0.0
 langsmith==0.3.19
 MarkupSafe==3.0.2
 marshmallow==3.26.1

@@ -25,12 +25,16 @@ import { CopyFilled } from "@ant-design/icons"
 import { useTheme } from "../../context/ThemeContext"
 import LLMNode from "../LLMNode/LlmNode"
 import ImageNode from "../ImageNode/ImageNode"
+import VideoNode from "../VideoNode/VideoNode"
 import CanvasInfo from "./CanvasInfo"
 import AnimatedConnectionLine from "./AnimatedConnectionLine"
 import {
     llmNodeSize,
     llmNewNodeDeltaX,
     imageNodeSize,
+    videoNodeSize,
+    VIDEO_MIME_TYPES,
+    VIDEO_MODEL,
     backendServerURL,
     flowViewMinZoom,
     flowViewMaxZoom,
@@ -40,6 +44,7 @@ import {
 const nodeTypes = {
     llmText: LLMNode,
     imageNode: ImageNode,
+    videoNode: VideoNode,
 }
 
 
@@ -89,12 +94,37 @@ function createNewImageNode({
     }
 }
 
+function createNewVideoNode({
+    position,
+    videoDataUrl,
+    fileName,
+    data = {},
+    selected=true,
+}: {
+    position: { x: number, y: number },
+    videoDataUrl: string,
+    fileName: string,
+    data?: object,
+    selected?: boolean,
+}): ExtendedNode {
+    return {
+        id: nanoid(10),
+        position,
+        type: 'videoNode',
+        data: { videoDataUrl, fileName, ...data } as ExtendedNodeData,
+        selected,
+        origin: [0, 0],
+        measured: videoNodeSize,
+    }
+}
+
 export type ExtendedNodeData = {
     model?: string,
     prompt?: string,
     prompt_response?: string,
     parent_ids?: Array<string>,
     imageDataUrl?: string,
+    videoDataUrl?: string,
     fileName?: string,
     setNode: (nodeId: string, newData: ExtendedNodeData, selected: boolean) => void,
     createNextNode: (fromNodeId: string, newNodePosition: XYPosition, newNodeData: object) => ExtendedNode,
@@ -386,10 +416,11 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
     const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault()
         const files = Array.from(event.dataTransfer.files)
+        const videoFile = files.find((f) => VIDEO_MIME_TYPES.includes(f.type))
         const imageFile = files.find(f =>
             f.type === 'image/png' || f.type === 'image/jpeg'
         )
-        if (!imageFile) return
+        if (!videoFile && !imageFile) return
 
         const dropPosition = reactFlowInstance.screenToFlowPosition({
             x: event.clientX,
@@ -397,6 +428,40 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
         })
 
         const reader = new FileReader()
+        if (videoFile) {
+            reader.onload = (e) => {
+                const videoDataUrl = e.target?.result as string
+                const newVideoNode = createNewVideoNode({
+                    position: dropPosition,
+                    videoDataUrl,
+                    fileName: videoFile.name,
+                    data: { setNode, createNextNode, canvasId },
+                    selected: false,
+                })
+                const newTextNode = createNewLlmTextNode({
+                    position: {
+                        x: dropPosition.x + videoNodeSize.width + llmNewNodeDeltaX,
+                        y: dropPosition.y,
+                    },
+                    data: { setNode, createNextNode, canvasId, model: VIDEO_MODEL },
+                    origin: [0, 0],
+                })
+                setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat([newVideoNode, newTextNode]))
+
+                const newEdge: Edge = createEdge(newVideoNode.id, newTextNode.id)
+                setEdges((eds) => eds.concat(newEdge))
+
+                reactFlowInstance.fitView({
+                    nodes: [{ id: newVideoNode.id }, { id: newTextNode.id }],
+                    duration: 1000,
+                    padding: 0.07,
+                })
+            }
+            reader.readAsDataURL(videoFile)
+            return
+        }
+
+        if (!imageFile) return
         reader.onload = (e) => {
             const imageDataUrl = e.target?.result as string
             const newImageNode = createNewImageNode({
@@ -468,7 +533,12 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                 })
 
                 const sourceNode = connectionState.fromNode
-                const sourceNodeSize = sourceNode.type === 'imageNode' ? imageNodeSize : llmNodeSize
+                let sourceNodeSize = llmNodeSize
+                if (sourceNode.type === 'imageNode') {
+                    sourceNodeSize = imageNodeSize
+                } else if (sourceNode.type === 'videoNode') {
+                    sourceNodeSize = videoNodeSize
+                }
 
                 // Clicked on right handle, set the new node position
                 const rightDeltaX = nodePosition.x - sourceNode.position.x
@@ -487,7 +557,7 @@ export default function Flow({ canvasId, canvasTitle, existingNodes, newCanvas }
                 const nextNode = createNextNode(
                     sourceNode.id,
                     nodePosition,
-                    { model: sourceNode.data.model }
+                    { model: sourceNode.type === "videoNode" ? VIDEO_MODEL : sourceNode.data.model }
                 )
 
                 if (isMobile) {

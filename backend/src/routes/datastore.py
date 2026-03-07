@@ -6,7 +6,13 @@ from src.db.firestore import (
     update_document_in_collection,
 )
 from src.routes.validation.validate import validate_json, OptionalField
-from src.db.storage import upload_base64_image, is_base64_data_url, delete_blobs
+from src.db.storage import (
+    upload_base64_image,
+    upload_base64_video,
+    get_video_extension,
+    is_base64_data_url,
+    delete_blobs,
+)
 
 
 ds_routes = Blueprint("ds_routes", __name__)
@@ -167,6 +173,7 @@ def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
     and replace with the public URL. Mutates nodes in place.
     Handles:
     - imageNode: base64 in data.imageDataUrl
+    - videoNode: base64 in data.videoDataUrl
     - llmText: base64 in data.prompt_response (generated images)
     """
     for node in nodes:
@@ -182,6 +189,18 @@ def upload_node_images(nodes, canvas_id, gcs_client, bucket_name):
                     node["data"]["imageDataUrl"] = public_url
                 except Exception as e:
                     print(f"Error uploading image for node {node['id']}: {e}")
+        elif node.get("type") == "videoNode":
+            data_url = node.get("data", {}).get("videoDataUrl", "")
+            if is_base64_data_url(data_url):
+                ext = get_video_extension(data_url)
+                blob_path = f"canvases/{canvas_id}/{node['id']}.{ext}"
+                try:
+                    public_url = upload_base64_video(
+                        gcs_client, bucket_name, blob_path, data_url
+                    )
+                    node["data"]["videoDataUrl"] = public_url
+                except Exception as e:
+                    print(f"Error uploading video for node {node['id']}: {e}")
         elif node.get("type") == "llmText":
             prompt_response = node.get("data", {}).get("prompt_response", "")
             if is_base64_data_url(prompt_response):
@@ -216,6 +235,10 @@ def delete_removed_node_images(incoming_nodes, canvas_id, db, gcs_client, bucket
                 image_url = node.get("data", {}).get("imageDataUrl", "")
                 if image_url.startswith(prefix):
                     blob_paths.append(image_url[len(prefix):])
+            elif node.get("type") == "videoNode":
+                video_url = node.get("data", {}).get("videoDataUrl", "")
+                if video_url.startswith(prefix):
+                    blob_paths.append(video_url[len(prefix):])
             elif node.get("type") == "llmText":
                 prompt_response = node.get("data", {}).get("prompt_response", "")
                 if prompt_response.startswith(prefix):

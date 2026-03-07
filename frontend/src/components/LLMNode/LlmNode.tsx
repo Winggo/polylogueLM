@@ -22,6 +22,7 @@ import {
     llmNodeSize,
     llmNewNodeDeltaX,
     initialModel,
+    VIDEO_MODEL,
     IMAGE_MODELS,
     NON_IMAGE_MODELS,
     imageProgressMessages,
@@ -52,6 +53,9 @@ const modelMapping: Record<string, string> = {
     "google/flash-image-2.5": "Google Nano Banana",
     "openai/gpt-image-1.5": "OpenAI GPT Image 1.5",
 }
+const videoModels = [
+    { value: VIDEO_MODEL, label: "Google Gemini 2 Flash" },
+]
 
 export default function LLMNode ({
     id: nodeId,
@@ -97,6 +101,7 @@ export default function LLMNode ({
     const childNodes = useNodesData<Node>(
         childConnections.map((connection) => connection.target)
     )
+    const hasVideoParent = parentNodes.some((nd) => nd.type === "videoNode")
 
     useEffect(() => {
         if (selected) {
@@ -106,6 +111,12 @@ export default function LLMNode ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        if (hasVideoParent) {
+            setModel(VIDEO_MODEL)
+        }
+    }, [hasVideoParent, model])
 
     const fetchPrompt = async (signal: AbortSignal ) => {
         try {
@@ -236,6 +247,9 @@ export default function LLMNode ({
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)
     const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => setModel(e.target.value as keyof typeof modelMapping)
+    const modelOptions = hasVideoParent
+        ? videoModels
+        : models
 
     const renderModelDropdown = () => {
         if (!selected && !isHovered) return
@@ -255,9 +269,9 @@ export default function LLMNode ({
                     `}
                 >
                     <option value="" disabled>Select a model</option>
-                    {models.map((model) => (
-                        <option key={model.value} value={model.value}>
-                            {model.label}
+                    {modelOptions.map((modelOption) => (
+                        <option key={modelOption.value} value={modelOption.value}>
+                            {modelOption.label}
                         </option>
                     ))}
                 </select>
