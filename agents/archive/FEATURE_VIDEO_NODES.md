@@ -8,7 +8,7 @@ Polylogue currently supports dropping image files onto the canvas, creating Imag
 
 **API finding**: Together.ai's `video_url` content type requires HTTP URLs (base64 data URLs for video are not documented). This means videos must be uploaded to GCS before being sent to the model. LangChain ChatTogether may not pass `video_url` content parts correctly, so we'll use the Together SDK directly for video completions.
 
-**Model**: We'll try `gemma3n_4b` (`google/gemma-3n-E4B-it`) first as specified. If it doesn't support video on Together.ai, we'll switch to `qwen3_8b` (`Qwen/Qwen3-VL-8B-Instruct`). The constant `initialVideoModel` makes switching trivial.
+**Model**: We'll try `gemma3n_4b` (`google/gemma-3n-E4B-it`) first as specified. If it doesn't support video on Together.ai, we'll switch to `qwen3_8b` (`Qwen/Qwen3-VL-8B-Instruct`). The constant `VIDEO_MODEL` makes switching trivial.
 
 **Upload timing**: Upload video to GCS on completion (when user submits prompt), not on drop. Simplest approach — adds a few seconds latency on first completion but keeps the drop flow simple.
 
@@ -20,7 +20,7 @@ Polylogue currently supports dropping image files onto the canvas, creating Imag
 - Add `videoNodeSize = { width: 600, height: 450 }`
 - Add `VIDEO_MIME_TYPES` array: `['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo']`
 - Add `VIDEO_MODELS = ["gemma3n_4b", "qwen3_8b"]` — models that accept video input
-- Add `initialVideoModel = "gemma3n_4b"` — default model for video node children
+- Add `VIDEO_MODEL = "gemma3n_4b"` — default model for video node children
 
 ### 2. `frontend/src/components/VideoNode/VideoNode.tsx` (NEW)
 - Clone ImageNode structure, replace `<img>` with `<video controls>`
@@ -30,16 +30,16 @@ Polylogue currently supports dropping image files onto the canvas, creating Imag
 
 ### 3. `frontend/src/components/Flow/Flow.tsx`
 - Import `VideoNode`, register in `nodeTypes`: `videoNode: VideoNode`
-- Import `videoNodeSize`, `VIDEO_MIME_TYPES`, `initialVideoModel`
+- Import `videoNodeSize`, `VIDEO_MIME_TYPES`, `VIDEO_MODEL`
 - Add `createNewVideoNode()` function (parallel to `createNewImageNode`)
 - Add `videoDataUrl?: string` to `ExtendedNodeData` type
 - Update `handleDrop`: detect video files first (via `VIDEO_MIME_TYPES`), create VideoNode + connected LLMTextNode with forced model
-- Update `onConnectEnd`: add `videoNode` to source node size calculation, force `initialVideoModel` when source is videoNode
+- Update `onConnectEnd`: add `videoNode` to source node size calculation, force `VIDEO_MODEL` when source is videoNode
 
 ### 4. `frontend/src/components/LLMNode/LlmNode.tsx`
-- Import `VIDEO_MODELS`, `initialVideoModel` from constants
+- Import `VIDEO_MODELS`, `VIDEO_MODEL` from constants
 - Detect if any parent is `videoNode`: `const hasVideoParent = parentNodes.some(nd => nd.type === 'videoNode')`
-- When `hasVideoParent` is true: set initial model to `initialVideoModel`, restrict dropdown to only show `VIDEO_MODELS` entries (gemma3n_4b and qwen3_8b)
+- When `hasVideoParent` is true: set initial model to `VIDEO_MODEL`, restrict dropdown to only show `VIDEO_MODELS` entries (gemma3n_4b and qwen3_8b)
 - When `hasVideoParent` is false: show full model list as before
 
 ### 5. `backend/src/db/storage.py`
