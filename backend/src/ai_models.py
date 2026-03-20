@@ -9,16 +9,10 @@ from google.genai import types
 from src.db.firestore import get_document_by_collection_and_id
 
 TOGETHER_MODEL_IDS = {
-    "llamba4_17b": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     "gemma3n_4b": "google/gemma-3n-E4B-it",
     "qwen3_8b": "Qwen/Qwen3-VL-8B-Instruct",
 }
 
-llamba4_17b = ChatTogether(
-    model=TOGETHER_MODEL_IDS["llamba4_17b"],
-    together_api_key=os.getenv("TOGETHER_API_KEY"),
-    temperature=0.7,
-)
 gemma3n_4b = ChatTogether(
     model=TOGETHER_MODEL_IDS["gemma3n_4b"],
     together_api_key=os.getenv("TOGETHER_API_KEY"),
@@ -72,12 +66,10 @@ def _make_gemini_image_part(data_url):
 
 
 def get_model(model_name):
-    if model_name == "llamba4_17b":
-        llm = llamba4_17b
+    if model_name == "qwen3_8b":
+        llm = qwen3_8b
     elif model_name == "gemma3n_4b":
         llm = gemma3n_4b
-    elif model_name == "qwen3_8b":
-        llm = qwen3_8b
     else:
         raise ValueError(f"Unsupported model type: {model_name}")
 
