@@ -23,5 +23,5 @@ __pycache__/
 node_modules/
 next-env.d.ts
 
-.next/
-.next/**
+.next/dev
+.next/cache
