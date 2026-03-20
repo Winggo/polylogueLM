@@ -164,7 +164,7 @@ def generate_prompt_question(parent_nodes, model=None):
                 return response.text
             except Exception as e:
                 print(f"Error generating video prompt question with Gemini: {e}")
-                return "Sorry, I encountered an error processing your request."
+                return ""
 
         preamble = no_context_prompt_question_preamble
         if text_responses or image_data_urls or video_data_urls:
@@ -192,7 +192,7 @@ def generate_prompt_question(parent_nodes, model=None):
         return prompt_question.content if hasattr(prompt_question, 'content') else str(prompt_question)
     except Exception as e:
         print(f"Error generating response: {e}")
-        return "Sorry, I encountered an error processing your request."
+        return ""
 
 
 def generate_response_with_context(
