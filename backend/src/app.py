@@ -4,7 +4,6 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-from src.redis_listener import start_redis_client, start_redis_pubsub
 from src.db.firestore import start_firestore_project_client
 from src.db.storage import start_storage_client
 
@@ -29,21 +28,6 @@ app.config['FIRESTORE'] = ds_client
 gcs_client = start_storage_client(os.environ["GCP_PROJECT"])
 app.config['GCS'] = gcs_client
 app.config['GCS_BUCKET'] = os.environ.get("GCS_BUCKET", "polylogue-canvas-images")
-
-
-enable_redis = os.getenv("ENABLE_REDIS", "false").lower() == "true"
-if enable_redis:
-    r_client = start_redis_client()
-    app.config['REDIS'] = r_client
-
-
-enable_redis_pubsub = os.getenv("ENABLE_REDIS_PUBSUB", "false").lower() == "true"
-if enable_redis_pubsub:
-    pubsub = start_redis_pubsub(r_client, socketio)
-    app.config['PUBSUB'] = pubsub
-
-    from src.routes.sockets import socket_routes
-
 
 
 from src.routes.datastore import ds_routes

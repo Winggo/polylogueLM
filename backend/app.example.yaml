@@ -11,9 +11,5 @@ handlers:
 env_variables:
   GCP_PROJECT:
   TOGETHER_API_KEY:
-  ENABLE_REDIS: "false"
-  REDIS_HOST: "localhost"
-  REDIS_PORT: "6379"
-  ENABLE_REDIS_PUBSUB: "false"
   FLASK_ENV: "production"
   CORS_ORIGIN: "https://polylogue.dev"
